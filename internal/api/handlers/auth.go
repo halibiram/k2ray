@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"k2ray/internal/api/middleware"
 	"k2ray/internal/auth"
 	"k2ray/internal/db"
 	"k2ray/internal/utils"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +18,11 @@ import (
 type LoginPayload struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+// RefreshPayload defines the expected JSON structure for a token refresh request.
+type RefreshPayload struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
 // Login is the handler for the user authentication endpoint.
@@ -61,4 +68,82 @@ func Login(c *gin.Context) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	})
+}
+
+// Refresh is the handler for refreshing JWTs. It implements token rotation.
+func Refresh(c *gin.Context) {
+	var payload RefreshPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
+		return
+	}
+
+	// 1. Validate the provided refresh token
+	claims, err := auth.ValidateToken(payload.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	// 2. Check if the refresh token has already been used (is blocklisted)
+	isBlocklisted, err := db.IsTokenBlocklisted(claims.ID)
+	if err != nil {
+		log.Printf("Error checking token blocklist for JTI %s: %v", claims.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify token status"})
+		return
+	}
+	if isBlocklisted {
+		// This could indicate a stolen token is being re-used.
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Refresh token has already been used"})
+		return
+	}
+
+	// 3. Invalidate the old refresh token by adding it to the blocklist.
+	expiresAt := claims.ExpiresAt.Time
+	if err := db.BlocklistToken(claims.ID, expiresAt); err != nil {
+		log.Printf("Error blocklisting token for JTI %s: %v", claims.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process refresh token"})
+		return
+	}
+
+	// 4. Issue a new pair of tokens
+	newAccessToken, newRefreshToken, err := auth.GenerateTokens(claims.Username)
+	if err != nil {
+		log.Printf("Token generation error for user %s: %v", claims.Username, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new tokens"})
+		return
+	}
+
+	// 5. Return the new tokens
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
+	})
+}
+
+// Logout invalidates the user's current access token by adding it to the blocklist.
+func Logout(c *gin.Context) {
+	// The AuthMiddleware has already validated the token and placed its details in the context.
+	jtiVal, ok := c.Get(middleware.ContextTokenJTIKey)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JTI not found in context"})
+		return
+	}
+	jti := jtiVal.(string)
+
+	expiresAtVal, ok := c.Get(middleware.ContextTokenExpiresAtKey)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Expiration not found in context"})
+		return
+	}
+	expiresAt := expiresAtVal.(time.Time)
+
+	// Add the token to the blocklist.
+	if err := db.BlocklistToken(jti, expiresAt); err != nil {
+		log.Printf("Error blocklisting token for JTI %s: %v", jti, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process logout"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }

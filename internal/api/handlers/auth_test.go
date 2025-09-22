@@ -69,8 +69,8 @@ func createTestUser(username, password string) {
 	}
 }
 
-// TestLoginHandler contains all sub-tests for the login endpoint.
-func TestLoginHandler(t *testing.T) {
+// TestAuthEndpoints contains all sub-tests for the authentication flow.
+func TestAuthEndpoints(t *testing.T) {
 
 	t.Run("Successful Login", func(t *testing.T) {
 		loginPayload := `{"username": "testuser", "password": "password123"}`
@@ -120,5 +120,94 @@ func TestLoginHandler(t *testing.T) {
 		testRouter.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	// Helper function to perform login and extract tokens for other tests
+	loginAndGetTokens := func(t *testing.T) (string, string) {
+		// The test user is created once in TestMain, but we need to log in for each sub-test
+		// that needs fresh tokens, as other tests might invalidate them (e.g., logout).
+		// Note: This assumes the user 'testuser'/'password123' exists.
+		loginPayload := `{"username": "testuser", "password": "password123"}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBufferString(loginPayload))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+
+		if !assert.Equal(t, http.StatusOK, w.Code, "Login helper failed") {
+			t.FailNow()
+		}
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if !assert.NoError(t, err, "Failed to unmarshal login response in helper") {
+			t.FailNow()
+		}
+		return response["access_token"], response["refresh_token"]
+	}
+
+	t.Run("Auth Middleware", func(t *testing.T) {
+		accessToken, _ := loginAndGetTokens(t)
+
+		// Test with valid token
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/users/me", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+		var response map[string]string
+		json.Unmarshal(w.Body.Bytes(), &response)
+		assert.Equal(t, "testuser", response["username"])
+
+		// Test with no token
+		req, _ = http.NewRequest(http.MethodGet, "/api/v1/users/me", nil)
+		w = httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("Logout and Token Revocation", func(t *testing.T) {
+		accessToken, _ := loginAndGetTokens(t)
+
+		// Perform logout
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		// Verify the token is now blocklisted
+		req2, _ := http.NewRequest(http.MethodGet, "/api/v1/users/me", nil)
+		req2.Header.Set("Authorization", "Bearer "+accessToken)
+		w2 := httptest.NewRecorder()
+		testRouter.ServeHTTP(w2, req2)
+		assert.Equal(t, http.StatusUnauthorized, w2.Code)
+	})
+
+	t.Run("Token Refresh and Rotation", func(t *testing.T) {
+		_, refreshToken := loginAndGetTokens(t)
+		refreshPayload := `{"refresh_token": "` + refreshToken + `"}`
+
+		// Perform refresh
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/refresh", bytes.NewBufferString(refreshPayload))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		// Extract new tokens
+		var response map[string]string
+		json.Unmarshal(w.Body.Bytes(), &response)
+		newAccessToken := response["access_token"]
+		newRefreshToken := response["refresh_token"]
+		assert.NotEmpty(t, newAccessToken)
+		assert.NotEmpty(t, newRefreshToken)
+		assert.NotEqual(t, refreshToken, newRefreshToken, "Refresh token should be rotated")
+
+		// Verify the old refresh token is now invalid
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/refresh", bytes.NewBufferString(refreshPayload))
+		req2.Header.Set("Content-Type", "application/json")
+		testRouter.ServeHTTP(w2, req2) // Use a new request object
+		assert.Equal(t, http.StatusUnauthorized, w2.Code)
 	})
 }

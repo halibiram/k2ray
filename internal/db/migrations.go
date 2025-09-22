@@ -8,26 +8,38 @@ import (
 // In a larger application, this could be handled by a more robust migration library,
 // but for this project, a simple function is sufficient.
 func RunMigrations() {
-	// SQL statement to create the 'users' table.
-	// "IF NOT EXISTS" prevents an error if the table is already there.
-	// The username is set to be UNIQUE to prevent duplicate user accounts.
-	createUsersTableSQL := `
-	CREATE TABLE IF NOT EXISTS users (
-		"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"username" TEXT NOT NULL UNIQUE,
-		"password_hash" TEXT NOT NULL
-	);`
+	runMigration("users", `
+		CREATE TABLE IF NOT EXISTS users (
+			"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			"username" TEXT NOT NULL UNIQUE,
+			"password_hash" TEXT NOT NULL
+		);
+	`)
 
-	log.Println("Running database migration for 'users' table...")
-	statement, err := DB.Prepare(createUsersTableSQL)
+	runMigration("revoked_tokens", `
+		CREATE TABLE IF NOT EXISTS revoked_tokens (
+			"jti" TEXT NOT NULL PRIMARY KEY,
+			"expires_at" INTEGER NOT NULL
+		);
+	`)
+
+	runMigration("revoked_tokens_index", `
+		CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expires_at ON revoked_tokens (expires_at);
+	`)
+}
+
+// runMigration is a helper function to execute a single migration statement.
+func runMigration(name, sql string) {
+	log.Printf("Running database migration for '%s'...", name)
+	statement, err := DB.Prepare(sql)
 	if err != nil {
-		log.Fatalf("Fatal error preparing users table migration: %v", err)
+		log.Fatalf("Fatal error preparing migration '%s': %v", name, err)
 	}
 	defer statement.Close()
 
 	_, err = statement.Exec()
 	if err != nil {
-		log.Fatalf("Fatal error executing users table migration: %v", err)
+		log.Fatalf("Fatal error executing migration '%s': %v", name, err)
 	}
-	log.Println("'users' table migration successful.")
+	log.Printf("Migration '%s' successful.", name)
 }
