@@ -14,5 +14,10 @@ func SetupRouter(router *gin.Engine) {
 		{
 			systemRoutes.GET("/status", handlers.SystemStatus)
 		}
+
+		authRoutes := apiV1.Group("/auth")
+		{
+			authRoutes.POST("/login", handlers.Login)
+		}
 	}
 }
