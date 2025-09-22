@@ -17,6 +17,9 @@ const (
 )
 
 // ManagerState holds the current state of the V2Ray process manager.
+// NOTE: This is a mocked implementation for development purposes, as the v2ray-core
+// executable is not available in the sandboxed environment. The logic here simulates
+// the behavior of a real process manager.
 type ManagerState struct {
 	mu        sync.RWMutex
 	isRunning bool

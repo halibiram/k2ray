@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '../services/api'
+import { useRouter } from 'vue-router'
 
 // Define the structure of the login credentials
 interface LoginCredentials {
@@ -42,16 +43,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
-    // In a real app, we would also call a /logout endpoint on the server
-    // to invalidate the token on the backend via the blocklist.
-    accessToken.value = null
-    refreshToken.value = null
-    isAuthenticated.value = false
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    // Here we would redirect to the login page
-    // router.push('/login')
+  async function logout() {
+    try {
+      // The interceptor will add the access token to the header.
+      await apiClient.post('/auth/logout')
+    } catch (e) {
+      console.error('Server logout failed, proceeding with client-side cleanup:', e)
+    } finally {
+      accessToken.value = null
+      refreshToken.value = null
+      isAuthenticated.value = false
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      // In a real app, you might want to force a redirect.
+      // const router = useRouter() // This doesn't work outside setup.
+      // A common pattern is to do the redirect in the component that calls logout.
+    }
   }
 
   return {
