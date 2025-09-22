@@ -42,6 +42,21 @@ func SetupRouter(router *gin.Engine) {
 				configRoutes.PUT("/:id", handlers.UpdateConfig)
 				configRoutes.DELETE("/:id", handlers.DeleteConfig)
 			}
+
+			// Protected system routes
+			protectedSystemRoutes := protected.Group("/system")
+			{
+				protectedSystemRoutes.GET("/active-config", handlers.GetActiveConfig)
+				protectedSystemRoutes.POST("/active-config", handlers.SetActiveConfig)
+			}
+
+			// V2Ray process management routes
+			v2rayRoutes := protected.Group("/v2ray")
+			{
+				v2rayRoutes.POST("/start", handlers.StartV2Ray)
+				v2rayRoutes.POST("/stop", handlers.StopV2Ray)
+				v2rayRoutes.GET("/status", handlers.GetV2RayStatus)
+			}
 		}
 	}
 }

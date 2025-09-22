@@ -227,3 +227,67 @@ func TestV2rayAccessControl(t *testing.T) {
 	testRouter.ServeHTTP(delW, delReq)
 	assert.Equal(t, http.StatusNotFound, delW.Code)
 }
+
+func TestV2RayProcessEndpoints(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	// 1. Check initial status
+	statusReq, _ := http.NewRequest(http.MethodGet, "/api/v1/v2ray/status", nil)
+	statusReq.Header.Set("Authorization", "Bearer "+accessToken)
+	statusW := httptest.NewRecorder()
+	testRouter.ServeHTTP(statusW, statusReq)
+	assert.Equal(t, http.StatusOK, statusW.Code)
+	var statusResponse map[string]any
+	json.Unmarshal(statusW.Body.Bytes(), &statusResponse)
+	assert.Equal(t, "stopped", statusResponse["status"])
+
+	// 2. Create a config to use
+	configPayload := `{"name": "My Active Server", "protocol": "vmess", "config_data": {"v": "2", "add": "active.com", "port": 443}}`
+	createReq, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+	createReq.Header.Set("Authorization", "Bearer "+accessToken)
+	createW := httptest.NewRecorder()
+	testRouter.ServeHTTP(createW, createReq)
+	assert.Equal(t, http.StatusCreated, createW.Code)
+	var createdConfig db.V2rayConfig
+	json.Unmarshal(createW.Body.Bytes(), &createdConfig)
+
+	// 3. Set it as active
+	activePayload := fmt.Sprintf(`{"config_id": %d}`, createdConfig.ID)
+	activeReq, _ := http.NewRequest(http.MethodPost, "/api/v1/system/active-config", bytes.NewBufferString(activePayload))
+	activeReq.Header.Set("Authorization", "Bearer "+accessToken)
+	activeW := httptest.NewRecorder()
+	testRouter.ServeHTTP(activeW, activeReq)
+	assert.Equal(t, http.StatusOK, activeW.Code)
+
+	// 4. Start V2Ray
+	startReq, _ := http.NewRequest(http.MethodPost, "/api/v1/v2ray/start", nil)
+	startReq.Header.Set("Authorization", "Bearer "+accessToken)
+	startW := httptest.NewRecorder()
+	testRouter.ServeHTTP(startW, startReq)
+	assert.Equal(t, http.StatusOK, startW.Code)
+
+	// 5. Check status is now running
+	statusReq2, _ := http.NewRequest(http.MethodGet, "/api/v1/v2ray/status", nil)
+	statusReq2.Header.Set("Authorization", "Bearer "+accessToken)
+	statusW2 := httptest.NewRecorder()
+	testRouter.ServeHTTP(statusW2, statusReq2)
+	assert.Equal(t, http.StatusOK, statusW2.Code)
+	json.Unmarshal(statusW2.Body.Bytes(), &statusResponse)
+	assert.Equal(t, "running", statusResponse["status"])
+
+	// 6. Stop V2Ray
+	stopReq, _ := http.NewRequest(http.MethodPost, "/api/v1/v2ray/stop", nil)
+	stopReq.Header.Set("Authorization", "Bearer "+accessToken)
+	stopW := httptest.NewRecorder()
+	testRouter.ServeHTTP(stopW, stopReq)
+	assert.Equal(t, http.StatusOK, stopW.Code)
+
+	// 7. Check status is now stopped
+	statusReq3, _ := http.NewRequest(http.MethodGet, "/api/v1/v2ray/status", nil)
+	statusReq3.Header.Set("Authorization", "Bearer "+accessToken)
+	statusW3 := httptest.NewRecorder()
+	testRouter.ServeHTTP(statusW3, statusReq3)
+	assert.Equal(t, http.StatusOK, statusW3.Code)
+	json.Unmarshal(statusW3.Body.Bytes(), &statusResponse)
+	assert.Equal(t, "stopped", statusResponse["status"])
+}

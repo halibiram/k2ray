@@ -39,6 +39,13 @@ func RunMigrations() {
 			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		);
 	`)
+
+	runMigration("system_settings", `
+		CREATE TABLE IF NOT EXISTS system_settings (
+			"key" TEXT NOT NULL PRIMARY KEY,
+			"value" TEXT NOT NULL
+		);
+	`)
 }
 
 // runMigration is a helper function to execute a single migration statement.

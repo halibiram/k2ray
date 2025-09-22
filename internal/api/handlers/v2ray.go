@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/db"
+	"k2ray/internal/v2ray"
 	"log"
 	"net/http"
 	"time"
@@ -233,4 +234,37 @@ func DeleteConfig(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// --- V2Ray Process Management Handlers ---
+
+// StartV2Ray starts the V2Ray service.
+func StartV2Ray(c *gin.Context) {
+	if err := v2ray.Start(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "V2Ray service started successfully (mocked)."})
+}
+
+// StopV2Ray stops the V2Ray service.
+func StopV2Ray(c *gin.Context) {
+	if err := v2ray.Stop(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "V2Ray service stopped successfully (mocked)."})
+}
+
+// GetV2RayStatus gets the current status of the V2Ray service.
+func GetV2RayStatus(c *gin.Context) {
+	isRunning, pid := v2ray.Status()
+	status := "stopped"
+	if isRunning {
+		status = "running"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"pid":    pid, // Will be 0 if not running
+	})
 }
