@@ -7,6 +7,7 @@ import (
 	"k2ray/internal/api"
 	"k2ray/internal/config"
 	"k2ray/internal/db"
+	"k2ray/internal/system"
 	"k2ray/internal/utils"
 	"log"
 	"net/http"
@@ -45,6 +46,17 @@ func TestMain(m *testing.M) {
 
 	createTestUser("user1", "password123")
 	createTestUser("user2", "password456")
+
+	// Create dummy log file for log tests
+	// The test binary runs from within the package dir, so we need to create the parent dir first.
+	err = os.MkdirAll("configs", 0755)
+	if err != nil {
+		log.Fatalf("Failed to create configs dir for dummy log: %v", err)
+	}
+	err = os.WriteFile(system.MockLogFilePath, []byte("[2025-09-22 14:20:01] K2Ray[123]: Service starting..."), 0644)
+	if err != nil {
+		log.Fatalf("Failed to create dummy log file: %v", err)
+	}
 
 	testRouter = gin.Default()
 	api.SetupRouter(testRouter)
@@ -226,6 +238,33 @@ func TestV2rayAccessControl(t *testing.T) {
 	delW := httptest.NewRecorder()
 	testRouter.ServeHTTP(delW, delReq)
 	assert.Equal(t, http.StatusNotFound, delW.Code)
+}
+
+func TestSystemEndpoints(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	t.Run("Get System Info", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/system/info", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var info system.SystemInfo
+		err := json.Unmarshal(w.Body.Bytes(), &info)
+		assert.NoError(t, err)
+		assert.Equal(t, "keenetic-k2ray", info.Hostname)
+	})
+
+	t.Run("Get System Logs", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/system/logs", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "[2025-09-22 14:20:01] K2Ray[123]: Service starting...")
+	})
 }
 
 func TestV2RayProcessEndpoints(t *testing.T) {

@@ -44,10 +44,9 @@ export const useConfigStore = defineStore('configs', () => {
     isLoading.value = true
     error.value = null
     try {
-      const response = await apiClient.post('/configs', {
-        ...payload,
-        config_data: JSON.stringify(payload.config_data)
-      })
+      // Axios will stringify the entire payload object, including the nested config_data object.
+      // The backend's json.RawMessage is designed to handle this correctly.
+      const response = await apiClient.post('/configs', payload)
       configs.value.push(response.data)
       return true
     } catch (e: any) {
@@ -62,11 +61,8 @@ export const useConfigStore = defineStore('configs', () => {
     isLoading.value = true
     error.value = null
     try {
-      const updateData: any = { ...payload }
-      if (payload.config_data) {
-        updateData.config_data = JSON.stringify(payload.config_data)
-      }
-      const response = await apiClient.put(`/configs/${id}`, updateData)
+      // The backend expects the raw object for config_data, Axios handles stringification.
+      const response = await apiClient.put(`/configs/${id}`, payload)
       const index = configs.value.findIndex(c => c.id === id)
       if (index !== -1) {
         configs.value[index] = response.data

@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import LoginView from '../views/Login.vue'
 import DashboardView from '../views/Dashboard.vue'
 import ConfigManagerView from '../views/ConfigManager.vue'
+import SystemStatusView from '../views/SystemStatus.vue'
 import Layout from '../components/common/Layout.vue'
 
 const routes = [
@@ -19,6 +20,7 @@ const routes = [
     children: [
       { path: '', name: 'Dashboard', component: DashboardView },
       { path: '/configurations', name: 'Configurations', component: ConfigManagerView },
+      { path: '/system-status', name: 'SystemStatus', component: SystemStatusView },
     ],
   },
   // Catch-all to redirect to the main page

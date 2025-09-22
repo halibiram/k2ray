@@ -48,6 +48,8 @@ func SetupRouter(router *gin.Engine) {
 			{
 				protectedSystemRoutes.GET("/active-config", handlers.GetActiveConfig)
 				protectedSystemRoutes.POST("/active-config", handlers.SetActiveConfig)
+				protectedSystemRoutes.GET("/info", handlers.GetSystemInfo)
+				protectedSystemRoutes.GET("/logs", handlers.GetSystemLogs)
 			}
 
 			// V2Ray process management routes

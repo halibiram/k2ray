@@ -7,10 +7,28 @@ interface V2rayStatus {
   pid: number
 }
 
+// Corresponds to the Go SystemInfo struct
+export interface SystemInfo {
+	hostname: string
+	os: string
+	kernel: string
+	cpu: string
+	cpu_cores: number
+	cpu_usage: number
+	memory_total_mb: number
+	memory_used_mb: number
+	memory_usage: number
+	uptime: string
+	keenetic_model: string
+	firmware_version: string
+}
+
 export const useSystemStore = defineStore('system', () => {
   // State
   const apiStatus = ref<'online' | 'offline' | 'loading'>('loading')
   const v2rayStatus = ref<V2rayStatus | null>(null)
+  const systemInfo = ref<SystemInfo | null>(null)
+  const systemLogs = ref<string>('')
   const error = ref<string | null>(null)
 
   // Actions
@@ -37,11 +55,35 @@ export const useSystemStore = defineStore('system', () => {
     }
   }
 
+  async function fetchSystemInfo() {
+    error.value = null
+    try {
+      const response = await apiClient.get('/system/info')
+      systemInfo.value = response.data
+    } catch (e: any) {
+      error.value = e.response?.data?.error || 'Failed to fetch system info.'
+    }
+  }
+
+  async function fetchSystemLogs() {
+    error.value = null
+    try {
+      const response = await apiClient.get('/system/logs')
+      systemLogs.value = response.data
+    } catch (e: any) {
+      error.value = e.response?.data?.error || 'Failed to fetch system logs.'
+    }
+  }
+
   return {
     apiStatus,
     v2rayStatus,
+    systemInfo,
+    systemLogs,
     error,
     fetchApiStatus,
     fetchV2rayStatus,
+    fetchSystemInfo,
+    fetchSystemLogs,
   }
 })
