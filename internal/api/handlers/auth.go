@@ -55,7 +55,7 @@ func Login(c *gin.Context) {
 	}
 
 	// 3. Generate JWT access and refresh tokens
-	accessToken, refreshToken, err := auth.GenerateTokens(user.Username)
+	accessToken, refreshToken, err := auth.GenerateTokens(user.ID, user.Username)
 	if err != nil {
 		log.Printf("Token generation error for user %s: %v", payload.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate authentication tokens"})
@@ -107,7 +107,7 @@ func Refresh(c *gin.Context) {
 	}
 
 	// 4. Issue a new pair of tokens
-	newAccessToken, newRefreshToken, err := auth.GenerateTokens(claims.Username)
+	newAccessToken, newRefreshToken, err := auth.GenerateTokens(claims.UserID, claims.Username)
 	if err != nil {
 		log.Printf("Token generation error for user %s: %v", claims.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new tokens"})

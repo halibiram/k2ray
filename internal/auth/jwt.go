@@ -12,20 +12,21 @@ import (
 // Claims defines the structure of the JWT claims for this application.
 // It includes the standard RegisteredClaims and custom claims like Username.
 type Claims struct {
+	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
 // GenerateTokens creates both an access token and a refresh token for a given username.
-func GenerateTokens(username string) (accessToken string, refreshToken string, err error) {
+func GenerateTokens(userID int64, username string) (accessToken string, refreshToken string, err error) {
 	// Generate the access token (short-lived)
-	accessToken, err = generateToken(username, 15*time.Minute)
+	accessToken, err = generateToken(userID, username, 15*time.Minute)
 	if err != nil {
 		return "", "", err
 	}
 
 	// Generate the refresh token (long-lived)
-	refreshToken, err = generateToken(username, 7*24*time.Hour) // 7 days
+	refreshToken, err = generateToken(userID, username, 7*24*time.Hour) // 7 days
 	if err != nil {
 		return "", "", err
 	}
@@ -34,13 +35,14 @@ func GenerateTokens(username string) (accessToken string, refreshToken string, e
 }
 
 // generateToken is a helper function to create a new JWT with a specific username and expiration.
-func generateToken(username string, expiration time.Duration) (string, error) {
+func generateToken(userID int64, username string, expiration time.Duration) (string, error) {
 	if config.AppConfig.JWTSecret == "" {
 		return "", errors.New("JWT secret is not configured")
 	}
 
 	expirationTime := time.Now().Add(expiration)
 	claims := &Claims{
+		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(), // JTI (JWT ID)

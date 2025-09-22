@@ -33,6 +33,15 @@ func SetupRouter(router *gin.Engine) {
 			{
 				userRoutes.GET("/me", handlers.GetMe)
 			}
+
+			configRoutes := protected.Group("/configs")
+			{
+				configRoutes.POST("", handlers.CreateConfig)
+				configRoutes.GET("", handlers.ListConfigs)
+				configRoutes.GET("/:id", handlers.GetConfig)
+				configRoutes.PUT("/:id", handlers.UpdateConfig)
+				configRoutes.DELETE("/:id", handlers.DeleteConfig)
+			}
 		}
 	}
 }

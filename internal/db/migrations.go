@@ -26,6 +26,19 @@ func RunMigrations() {
 	runMigration("revoked_tokens_index", `
 		CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expires_at ON revoked_tokens (expires_at);
 	`)
+
+	runMigration("v2ray_configs", `
+		CREATE TABLE IF NOT EXISTS v2ray_configs (
+			"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			"user_id" INTEGER NOT NULL,
+			"name" TEXT NOT NULL,
+			"protocol" TEXT NOT NULL,
+			"config_data" TEXT NOT NULL,
+			"created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			"updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+	`)
 }
 
 // runMigration is a helper function to execute a single migration statement.

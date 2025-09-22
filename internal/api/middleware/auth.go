@@ -17,6 +17,8 @@ const (
 	ContextTokenJTIKey = "jti"
 	// ContextTokenExpiresAtKey is the key for storing the token's expiration time.
 	ContextTokenExpiresAtKey = "expires_at"
+	// ContextUserIDKey is the key for storing the user's ID.
+	ContextUserIDKey = "user_id"
 )
 
 // AuthMiddleware creates a Gin middleware for authenticating requests via JWT.
@@ -54,6 +56,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store user information in the context for downstream handlers to use.
+		c.Set(ContextUserIDKey, claims.UserID)
 		c.Set(ContextUsernameKey, claims.Username)
 		c.Set(ContextTokenJTIKey, claims.ID)
 		c.Set(ContextTokenExpiresAtKey, claims.ExpiresAt.Time)
