@@ -21,6 +21,12 @@ var (
 	once      sync.Once
 )
 
+// ResetForTesting is a function to reset the singleton for testing purposes.
+func ResetForTesting() {
+	once = sync.Once{}
+	AppConfig = nil
+}
+
 // LoadConfig loads configuration from a .env file and the environment.
 // It is safe to call from multiple goroutines.
 func LoadConfig(path string) {

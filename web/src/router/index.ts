@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth'
 
 import LoginView from '../views/Login.vue'
 import DashboardView from '../views/Dashboard.vue'
+import ConfigManagerView from '../views/ConfigManager.vue'
 import Layout from '../components/common/Layout.vue'
 
 const routes = [
@@ -17,7 +18,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', name: 'Dashboard', component: DashboardView },
-      // Future authenticated routes can be added here
+      { path: '/configurations', name: 'Configurations', component: ConfigManagerView },
     ],
   },
   // Catch-all to redirect to the main page

@@ -1,0 +1,37 @@
+<template>
+  <div class="overflow-x-auto bg-white rounded-lg shadow">
+    <table class="min-w-full">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr v-if="configs.length === 0">
+          <td colspan="3" class="px-6 py-4 text-center text-gray-500">No configurations found.</td>
+        </tr>
+        <tr v-for="config in configs" :key="config.id">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ config.name }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ config.protocol }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+            <button @click="$emit('setActive', config.id)" class="text-blue-600 hover:text-blue-900">Set Active</button>
+            <button @click="$emit('edit', config)" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+            <button @click="$emit('delete', config.id)" class="text-red-600 hover:text-red-900">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { V2rayConfig } from '../../stores/configs'
+
+defineProps<{
+  configs: V2rayConfig[]
+}>()
+
+defineEmits(['edit', 'delete', 'setActive'])
+</script>
