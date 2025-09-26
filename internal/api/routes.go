@@ -59,6 +59,17 @@ func SetupRouter(router *gin.Engine) {
 				v2rayRoutes.POST("/stop", handlers.StopV2Ray)
 				v2rayRoutes.GET("/status", handlers.GetV2RayStatus)
 			}
+
+			// Metrics routes
+			metricsRoutes := protected.Group("/metrics")
+			{
+				metricsRoutes.GET("/traffic", handlers.GetTrafficMetrics)
+				metricsRoutes.GET("/connections", handlers.GetConnectionMetrics)
+				metricsRoutes.GET("/performance", handlers.GetPerformanceMetrics)
+			}
+
+			// WebSocket route
+			protected.GET("/ws", handlers.WebSocketHandler)
 		}
 	}
 }
