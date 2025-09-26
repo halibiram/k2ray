@@ -150,12 +150,12 @@ func TestV2rayConfigCRUD(t *testing.T) {
 	var createdConfig db.V2rayConfig
 
 	// 1. Create
-	configPayload := `{"name": "My Server", "protocol": "vmess", "config_data": {"v": "2", "add": "test.com", "port": 443}}`
+	configPayload := `{"name": "My Server", "protocol": "vmess", "config_data": {"v": "2", "add": "test.com", "port": 443, "id": "some-uuid-crud"}}`
 	createReq, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
 	createReq.Header.Set("Authorization", "Bearer "+accessToken)
 	createW := httptest.NewRecorder()
 	testRouter.ServeHTTP(createW, createReq)
-	assert.Equal(t, http.StatusCreated, createW.Code)
+	assert.Equal(t, http.StatusCreated, createW.Code, "CRUD Create failed with body: %s", createW.Body.String())
 	json.Unmarshal(createW.Body.Bytes(), &createdConfig)
 	assert.Equal(t, "My Server", createdConfig.Name)
 
@@ -205,12 +205,12 @@ func TestV2rayConfigCRUD(t *testing.T) {
 func TestV2rayAccessControl(t *testing.T) {
 	// User 1 creates a config
 	user1Token, _ := loginAs(t, "user1", "password123")
-	configPayload := `{"name": "User 1s Secret", "protocol": "vmess", "config_data": {"v": "2", "add": "user1.com", "port": 443}}`
+	configPayload := `{"name": "User 1s Secret", "protocol": "vmess", "config_data": {"v": "2", "add": "user1.com", "port": 443, "id": "some-uuid-acl"}}`
 	createReq, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
 	createReq.Header.Set("Authorization", "Bearer "+user1Token)
 	createW := httptest.NewRecorder()
 	testRouter.ServeHTTP(createW, createReq)
-	assert.Equal(t, http.StatusCreated, createW.Code)
+	assert.Equal(t, http.StatusCreated, createW.Code, "ACL Create failed with body: %s", createW.Body.String())
 	var user1Config db.V2rayConfig
 	json.Unmarshal(createW.Body.Bytes(), &user1Config)
 
@@ -350,12 +350,12 @@ func TestV2RayProcessEndpoints(t *testing.T) {
 	assert.Equal(t, "stopped", statusResponse["status"])
 
 	// 2. Create a config to use
-	configPayload := `{"name": "My Active Server", "protocol": "vmess", "config_data": {"v": "2", "add": "active.com", "port": 443}}`
+	configPayload := `{"name": "My Active Server", "protocol": "vmess", "config_data": {"v": "2", "add": "active.com", "port": 443, "id": "uuid-for-active"}}`
 	createReq, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
 	createReq.Header.Set("Authorization", "Bearer "+accessToken)
 	createW := httptest.NewRecorder()
 	testRouter.ServeHTTP(createW, createReq)
-	assert.Equal(t, http.StatusCreated, createW.Code)
+	assert.Equal(t, http.StatusCreated, createW.Code, "Failed to create config for process test. Body: "+createW.Body.String())
 	var createdConfig db.V2rayConfig
 	json.Unmarshal(createW.Body.Bytes(), &createdConfig)
 
@@ -398,4 +398,54 @@ func TestV2RayProcessEndpoints(t *testing.T) {
 	assert.Equal(t, http.StatusOK, statusW3.Code)
 	json.Unmarshal(statusW3.Body.Bytes(), &statusResponse)
 	assert.Equal(t, "stopped", statusResponse["status"])
+}
+
+func TestConfigValidationWithAdvancedFields(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	testCases := []struct {
+		name           string
+		payload        string
+		expectedStatus int
+	}{
+		{
+			name: "Create VMess with WebSocket",
+			payload: `{"name": "VMess WS", "protocol": "vmess", "config_data": {
+                "add": "ws.server.com", "port": 443, "id": "some-uuid", "aid": 0,
+                "net": "ws", "tls": "tls", "wsSettings": {"path": "/chat"}
+            }}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name: "Create VLESS with gRPC",
+			payload: `{"name": "VLESS gRPC", "protocol": "vless", "config_data": {
+                "add": "grpc.server.com", "port": 443, "id": "some-uuid",
+                "net": "grpc", "tls": "tls", "grpcSettings": {"serviceName": "my-service"}
+            }}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name: "Create Trojan with SNI",
+			payload: `{"name": "Trojan SNI", "protocol": "trojan", "config_data": {
+                "server": "cdn.com", "server_port": 443, "password": "pass",
+                "sni": "real.server.com", "tls": "tls"
+            }}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Invalid VMess - Missing ID",
+			payload:        `{"name": "Invalid VMess", "protocol": "vmess", "config_data": {"add": "test.com"}}`,
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(tc.payload))
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			w := httptest.NewRecorder()
+			testRouter.ServeHTTP(w, req)
+			assert.Equal(t, tc.expectedStatus, w.Code, "Test case failed: %s, Body: %s", tc.name, w.Body.String())
+		})
+	}
 }
