@@ -263,6 +263,29 @@ func TestVlessConfig(t *testing.T) {
 	})
 }
 
+func TestShadowsocksConfig(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	t.Run("Create Shadowsocks Config - Success", func(t *testing.T) {
+		configPayload := `{"name": "My SS Server", "protocol": "shadowsocks", "config_data": {"server": "ss.server.com", "server_port": 8388, "password": "ss-password", "method": "aes-256-gcm"}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("Create Shadowsocks Config - Invalid Data", func(t *testing.T) {
+		// Missing 'password' field
+		configPayload := `{"name": "My Invalid SS", "protocol": "shadowsocks", "config_data": {"server": "ss.server.com", "server_port": 8388, "method": "aes-256-gcm"}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
 func TestSystemEndpoints(t *testing.T) {
 	accessToken, _ := loginAs(t, "user1", "password123")
 

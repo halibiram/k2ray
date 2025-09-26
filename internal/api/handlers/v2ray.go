@@ -35,6 +35,14 @@ type VlessConfigData struct {
 	Encryption string `json:"encryption"`
 }
 
+// ShadowsocksConfigData is a struct for validating the basic fields of a Shadowsocks config.
+type ShadowsocksConfigData struct {
+	Server     string `json:"server"`
+	ServerPort int    `json:"server_port"`
+	Password   string `json:"password"`
+	Method     string `json:"method"`
+}
+
 // CreateConfig is the handler for creating a new V2Ray configuration.
 func CreateConfig(c *gin.Context) {
 	var payload CreateConfigPayload
@@ -63,6 +71,16 @@ func CreateConfig(c *gin.Context) {
 		}
 		if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
+			return
+		}
+	case "shadowsocks":
+		var ssData ShadowsocksConfigData
+		if err := json.Unmarshal(payload.ConfigData, &ssData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Shadowsocks config_data format"})
+			return
+		}
+		if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
 			return
 		}
 	default:
@@ -222,6 +240,16 @@ func UpdateConfig(c *gin.Context) {
 			}
 			if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
+				return
+			}
+		case "shadowsocks":
+			var ssData ShadowsocksConfigData
+			if err := json.Unmarshal(*payload.ConfigData, &ssData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Shadowsocks config_data format"})
+				return
+			}
+			if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
 				return
 			}
 		}
