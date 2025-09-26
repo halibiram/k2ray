@@ -10,7 +10,7 @@
           <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
             <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
               <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-                {{ isEditing ? 'Edit' : 'Create' }} VMess Configuration
+                {{ isEditing ? 'Edit' : 'Create' }} Configuration
               </DialogTitle>
               <form @submit.prevent="submitForm" class="mt-4 space-y-4">
                 <div>
@@ -18,9 +18,19 @@
                   <input v-model="form.name" type="text" id="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
                 </div>
                 <div>
-                  <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                  <input v-model="form.config_data.add" type="text" id="address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+                  <label for="protocol" class="block text-sm font-medium text-gray-700">Protocol</label>
+                  <select v-model="form.protocol" @change="onProtocolChange" id="protocol" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" :disabled="isEditing">
+                    <option value="vmess">VMess</option>
+                    <option value="vless">VLESS</option>
+                  </select>
                 </div>
+
+                <!-- VMess Fields -->
+                <template v-if="form.protocol === 'vmess'">
+                  <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <input v-model="form.config_data.add" type="text" id="address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+                  </div>
                 <div>
                   <label for="port" class="block text-sm font-medium text-gray-700">Port</label>
                   <input v-model.number="form.config_data.port" type="number" id="port" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
@@ -33,6 +43,27 @@
                   <label for="alterId" class="block text-sm font-medium text-gray-700">Alter ID</label>
                   <input v-model.number="form.config_data.aid" type="number" id="alterId" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
                 </div>
+                </template>
+
+                <!-- VLESS Fields -->
+                <template v-if="form.protocol === 'vless'">
+                   <div>
+                    <label for="vless-address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <input v-model="form.config_data.add" type="text" id="vless-address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+                  </div>
+                  <div>
+                    <label for="vless-port" class="block text-sm font-medium text-gray-700">Port</label>
+                    <input v-model.number="form.config_data.port" type="number" id="vless-port" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+                  </div>
+                  <div>
+                    <label for="vless-uuid" class="block text-sm font-medium text-gray-700">User ID (UUID)</label>
+                    <input v-model="form.config_data.id" type="text" id="vless-uuid" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+                  </div>
+                   <div>
+                    <label for="vless-encryption" class="block text-sm font-medium text-gray-700">Encryption</label>
+                    <input v-model="form.config_data.encryption" type="text" id="vless-encryption" value="none" disabled class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 focus:outline-none sm:text-sm" />
+                  </div>
+                </template>
 
                 <div class="mt-6 flex justify-end space-x-2">
                   <button type="button" @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none">
@@ -104,5 +135,13 @@ const closeModal = () => {
 
 const submitForm = () => {
   emit('save', form.value)
+}
+
+const onProtocolChange = () => {
+  if (form.value.protocol === 'vmess') {
+    form.value.config_data = { v: '2', add: '', port: 443, id: uuidv4(), aid: 0, net: 'tcp', type: 'none', host: '', path: '', tls: '' }
+  } else if (form.value.protocol === 'vless') {
+    form.value.config_data = { id: uuidv4(), add: '', port: 443, encryption: 'none', flow: '' }
+  }
 }
 </script>

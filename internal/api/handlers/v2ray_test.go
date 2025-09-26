@@ -240,6 +240,29 @@ func TestV2rayAccessControl(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, delW.Code)
 }
 
+func TestVlessConfig(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	t.Run("Create VLESS Config - Success", func(t *testing.T) {
+		configPayload := `{"name": "My VLESS Server", "protocol": "vless", "config_data": {"id": "some-uuid", "add": "vless.server.com", "port": 443, "encryption": "none"}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("Create VLESS Config - Invalid Data", func(t *testing.T) {
+		// Missing 'id' field
+		configPayload := `{"name": "My Invalid VLESS", "protocol": "vless", "config_data": {"add": "vless.server.com", "port": 443}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
 func TestSystemEndpoints(t *testing.T) {
 	accessToken, _ := loginAs(t, "user1", "password123")
 

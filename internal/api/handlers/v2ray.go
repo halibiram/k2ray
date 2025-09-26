@@ -27,6 +27,14 @@ type VmessConfigData struct {
 	Port any    `json:"port"` // Port can be string or number
 }
 
+// VlessConfigData is a struct for validating the basic fields of a VLESS config.
+type VlessConfigData struct {
+	ID         string `json:"id"` // UUID
+	Address    string `json:"add"`
+	Port       any    `json:"port"`
+	Encryption string `json:"encryption"`
+}
+
 // CreateConfig is the handler for creating a new V2Ray configuration.
 func CreateConfig(c *gin.Context) {
 	var payload CreateConfigPayload
@@ -35,20 +43,30 @@ func CreateConfig(c *gin.Context) {
 		return
 	}
 
-	// For now, only allow 'vmess' protocol as agreed in the plan.
-	if payload.Protocol != "vmess" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Protocol not supported, only 'vmess' is allowed for now."})
-		return
-	}
-
-	// Validate the VMess config data
-	var vmessData VmessConfigData
-	if err := json.Unmarshal(payload.ConfigData, &vmessData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
-		return
-	}
-	if vmessData.Add == "" || vmessData.Port == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
+	// Validate config_data based on the protocol
+	switch payload.Protocol {
+	case "vmess":
+		var vmessData VmessConfigData
+		if err := json.Unmarshal(payload.ConfigData, &vmessData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
+			return
+		}
+		if vmessData.Add == "" || vmessData.Port == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
+			return
+		}
+	case "vless":
+		var vlessData VlessConfigData
+		if err := json.Unmarshal(payload.ConfigData, &vlessData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VLESS config_data format"})
+			return
+		}
+		if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
+			return
+		}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Protocol not supported"})
 		return
 	}
 
@@ -184,15 +202,28 @@ func UpdateConfig(c *gin.Context) {
 		existingConfig.Name = *payload.Name
 	}
 	if payload.ConfigData != nil {
-		// Validate new config data before applying
-		var vmessData VmessConfigData
-		if err := json.Unmarshal(*payload.ConfigData, &vmessData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
-			return
-		}
-		if vmessData.Add == "" || vmessData.Port == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
-			return
+		// Validate new config data before applying, based on the existing config's protocol
+		switch existingConfig.Protocol {
+		case "vmess":
+			var vmessData VmessConfigData
+			if err := json.Unmarshal(*payload.ConfigData, &vmessData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
+				return
+			}
+			if vmessData.Add == "" || vmessData.Port == nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
+				return
+			}
+		case "vless":
+			var vlessData VlessConfigData
+			if err := json.Unmarshal(*payload.ConfigData, &vlessData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VLESS config_data format"})
+				return
+			}
+			if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
+				return
+			}
 		}
 		existingConfig.ConfigData = string(*payload.ConfigData)
 	}
