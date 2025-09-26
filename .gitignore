@@ -1,0 +1,14 @@
+# Log files
+*.log
+
+# Environment variables
+configs/system.env
+
+# NPM dependencies
+/web/node_modules
+
+# Vite build output
+/web/dist
+
+# VSCode settings
+.vscode/
