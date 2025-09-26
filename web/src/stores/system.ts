@@ -75,6 +75,14 @@ export const useSystemStore = defineStore('system', () => {
     }
   }
 
+  function updateSystemInfo(newInfo: SystemInfo) {
+    systemInfo.value = newInfo
+  }
+
+  function updateV2rayStatus(newStatus: V2rayStatus) {
+    v2rayStatus.value = newStatus
+  }
+
   return {
     apiStatus,
     v2rayStatus,
@@ -85,5 +93,7 @@ export const useSystemStore = defineStore('system', () => {
     fetchV2rayStatus,
     fetchSystemInfo,
     fetchSystemLogs,
+    updateSystemInfo,
+    updateV2rayStatus,
   }
 })

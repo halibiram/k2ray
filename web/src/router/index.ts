@@ -5,6 +5,7 @@ import LoginView from '../views/Login.vue'
 import DashboardView from '../views/Dashboard.vue'
 import ConfigManagerView from '../views/ConfigManager.vue'
 import SystemStatusView from '../views/SystemStatus.vue'
+import MonitoringView from '../views/Monitoring.vue'
 import Layout from '../components/common/Layout.vue'
 
 const routes = [
@@ -21,6 +22,7 @@ const routes = [
       { path: '', name: 'Dashboard', component: DashboardView },
       { path: '/configurations', name: 'Configurations', component: ConfigManagerView },
       { path: '/system-status', name: 'SystemStatus', component: SystemStatusView },
+      { path: '/monitoring', name: 'Monitoring', component: MonitoringView },
     ],
   },
   // Catch-all to redirect to the main page

@@ -36,6 +36,10 @@
         Sign in
       </button>
     </div>
+
+    <div v-if="authStore.error" class="p-4 text-sm text-red-700 bg-red-100 rounded-md" role="alert">
+      <span class="font-medium">Error:</span> {{ authStore.error }}
+    </div>
   </form>
 </template>
 
