@@ -3,5 +3,8 @@
 </template>
 
 <script setup lang="ts">
-// This is the root component.
+import { useThemeStore } from './stores/theme'
+
+// Initialize the theme store to apply the theme on app load
+useThemeStore()
 </script>

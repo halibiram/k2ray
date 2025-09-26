@@ -1,0 +1,36 @@
+{
+  "configManager": {
+    "title": "Yapılandırma Yöneticisi",
+    "description": "V2Ray yapılandırmalarınızı yönetin.",
+    "createNew": "Yeni Yapılandırma Oluştur",
+    "loading": "Yapılandırmalar yükleniyor...",
+    "error": "Hata: {error}"
+  },
+  "configList": {
+    "name": "İsim",
+    "protocol": "Protokol",
+    "actions": "Eylemler",
+    "setActive": "Aktif Et",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "qrCode": "QR Kod",
+    "noConfigs": "Yapılandırma bulunamadı."
+  },
+  "configImport": {
+    "title": "QR Koddan Yapılandırma İçe Aktar",
+    "scan": "Kamera ile Tara",
+    "upload": "Veya Bir Resim Yükle"
+  },
+  "qrModal": {
+    "title": "Yapılandırma QR Kodu",
+    "close": "Kapat"
+  },
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "logout": "Çıkış Yap"
+  },
+  "header": {
+    "title": "k2ray"
+  }
+}

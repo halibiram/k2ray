@@ -1,0 +1,36 @@
+{
+  "configManager": {
+    "title": "Configuration Manager",
+    "description": "Manage your V2Ray configurations.",
+    "createNew": "Create New Config",
+    "loading": "Loading configurations...",
+    "error": "Error: {error}"
+  },
+  "configList": {
+    "name": "Name",
+    "protocol": "Protocol",
+    "actions": "Actions",
+    "setActive": "Set Active",
+    "edit": "Edit",
+    "delete": "Delete",
+    "qrCode": "QR Code",
+    "noConfigs": "No configurations found."
+  },
+  "configImport": {
+    "title": "Import Configuration from QR Code",
+    "scan": "Scan with Camera",
+    "upload": "Or Upload an Image"
+  },
+  "qrModal": {
+    "title": "Configuration QR Code",
+    "close": "Close"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "logout": "Logout"
+  },
+  "header": {
+    "title": "k2ray"
+  }
+}
