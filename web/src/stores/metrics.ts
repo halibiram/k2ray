@@ -78,8 +78,12 @@ export const useMetricsStore = defineStore('metrics', {
   actions: {
     updateMetrics(newMetrics: { cpu: number[]; memory: number[] }) {
       // This action will be called by the WebSocket client later
-      this.metricsData.datasets[0].data = newMetrics.cpu;
-      this.metricsData.datasets[1].data = newMetrics.memory;
+      if (this.metricsData.datasets[0]) {
+        this.metricsData.datasets[0].data = newMetrics.cpu;
+      }
+      if (this.metricsData.datasets[1]) {
+        this.metricsData.datasets[1].data = newMetrics.memory;
+      }
     },
     updateTraffic(newTraffic: TrafficData) {
       // This action will be called by the WebSocket client later

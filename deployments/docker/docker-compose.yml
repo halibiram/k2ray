@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  k2ray:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    image: k2ray:latest
+    container_name: k2ray
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      # Mount custom config files if needed
+      # - ./configs:/home/k2ray/configs
+    environment:
+      # Add any environment variables your application needs
+      - TZ=UTC

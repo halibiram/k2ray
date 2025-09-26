@@ -13,7 +13,7 @@ export function useWebSocket() {
   const systemStore = useSystemStore();
 
   const connect = () => {
-    if (!authStore.token) {
+    if (!authStore.accessToken) {
       error.value = "Authentication token not found.";
       return;
     }
@@ -21,7 +21,7 @@ export function useWebSocket() {
     // Determine the WebSocket protocol
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${proto}//${host}/ws?token=${authStore.token}`;
+    const wsUrl = `${proto}//${host}/ws?token=${authStore.accessToken}`;
 
     ws.value = new WebSocket(wsUrl);
 

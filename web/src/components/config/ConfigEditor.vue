@@ -63,7 +63,7 @@
                   </div>
                    <div>
                     <label for="vless-encryption" class="block text-sm font-medium text-gray-700">Encryption</label>
-                    <input v-model="form.config_data.encryption" type="text" id="vless-encryption" value="none" disabled class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100" />
+                    <input v-model="form.config_data.encryption" type="text" id="vless-encryption" disabled class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100" />
                   </div>
                 </template>
 

@@ -38,7 +38,7 @@ const router = createRouter({
 })
 
 // Navigation Guard
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // We need to initialize the store here to use it outside of a component setup
   const authStore = useAuthStore()
 
