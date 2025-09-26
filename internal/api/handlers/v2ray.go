@@ -43,6 +43,13 @@ type ShadowsocksConfigData struct {
 	Method     string `json:"method"`
 }
 
+// TrojanConfigData is a struct for validating the basic fields of a Trojan config.
+type TrojanConfigData struct {
+	Server     string `json:"server"`
+	ServerPort int    `json:"server_port"`
+	Password   string `json:"password"`
+}
+
 // CreateConfig is the handler for creating a new V2Ray configuration.
 func CreateConfig(c *gin.Context) {
 	var payload CreateConfigPayload
@@ -81,6 +88,16 @@ func CreateConfig(c *gin.Context) {
 		}
 		if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
+			return
+		}
+	case "trojan":
+		var trojanData TrojanConfigData
+		if err := json.Unmarshal(payload.ConfigData, &trojanData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Trojan config_data format"})
+			return
+		}
+		if trojanData.Server == "" || trojanData.ServerPort == 0 || trojanData.Password == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Trojan config_data must contain 'server', 'server_port', and 'password' fields"})
 			return
 		}
 	default:
@@ -250,6 +267,16 @@ func UpdateConfig(c *gin.Context) {
 			}
 			if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
+				return
+			}
+		case "trojan":
+			var trojanData TrojanConfigData
+			if err := json.Unmarshal(*payload.ConfigData, &trojanData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Trojan config_data format"})
+				return
+			}
+			if trojanData.Server == "" || trojanData.ServerPort == 0 || trojanData.Password == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Trojan config_data must contain 'server', 'server_port', and 'password' fields"})
 				return
 			}
 		}

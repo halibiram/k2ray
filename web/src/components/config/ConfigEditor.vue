@@ -23,6 +23,7 @@
                     <option value="vmess">VMess</option>
                     <option value="vless">VLESS</option>
                     <option value="shadowsocks">Shadowsocks</option>
+                    <option value="trojan">Trojan</option>
                   </select>
                 </div>
 
@@ -86,6 +87,22 @@
                   </div>
                 </template>
 
+                <!-- Trojan Fields -->
+                <template v-if="form.protocol === 'trojan'">
+                   <div>
+                    <label for="trojan-server" class="block text-sm font-medium text-gray-700">Server Address</label>
+                    <input v-model="form.config_data.server" type="text" id="trojan-server" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
+                  </div>
+                  <div>
+                    <label for="trojan-port" class="block text-sm font-medium text-gray-700">Server Port</label>
+                    <input v-model.number="form.config_data.server_port" type="number" id="trojan-port" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
+                  </div>
+                   <div>
+                    <label for="trojan-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input v-model="form.config_data.password" type="password" id="trojan-password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
+                  </div>
+                </template>
+
                 <div class="mt-6 flex justify-end space-x-2">
                   <button type="button" @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none">
                     Cancel
@@ -130,6 +147,10 @@ const defaultShadowsocksData = () => ({
   server: '', server_port: 8388, password: '', method: 'aes-256-gcm'
 })
 
+const defaultTrojanData = () => ({
+  server: '', server_port: 443, password: ''
+})
+
 const form = ref<ConfigPayload>({
   name: '',
   protocol: 'vmess',
@@ -164,6 +185,8 @@ const onProtocolChange = () => {
     form.value.config_data = defaultVlessData()
   } else if (form.value.protocol === 'shadowsocks') {
     form.value.config_data = defaultShadowsocksData()
+  } else if (form.value.protocol === 'trojan') {
+    form.value.config_data = defaultTrojanData()
   }
 }
 </script>

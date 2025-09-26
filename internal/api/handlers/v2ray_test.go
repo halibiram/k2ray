@@ -263,6 +263,29 @@ func TestVlessConfig(t *testing.T) {
 	})
 }
 
+func TestTrojanConfig(t *testing.T) {
+	accessToken, _ := loginAs(t, "user1", "password123")
+
+	t.Run("Create Trojan Config - Success", func(t *testing.T) {
+		configPayload := `{"name": "My Trojan Server", "protocol": "trojan", "config_data": {"server": "trojan.server.com", "server_port": 443, "password": "trojan-password"}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("Create Trojan Config - Invalid Data", func(t *testing.T) {
+		// Missing 'password' field
+		configPayload := `{"name": "My Invalid Trojan", "protocol": "trojan", "config_data": {"server": "trojan.server.com", "server_port": 443}}`
+		req, _ := http.NewRequest(http.MethodPost, "/api/v1/configs", bytes.NewBufferString(configPayload))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		w := httptest.NewRecorder()
+		testRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
 func TestShadowsocksConfig(t *testing.T) {
 	accessToken, _ := loginAs(t, "user1", "password123")
 
