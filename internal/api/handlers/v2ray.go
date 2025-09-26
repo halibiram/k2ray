@@ -20,35 +20,137 @@ type CreateConfigPayload struct {
 	ConfigData json.RawMessage `json:"config_data" binding:"required"`
 }
 
-// VmessConfigData is a struct for validating the basic fields of a VMess config.
+// TransportSettings defines common transport settings for V2Ray protocols.
+type TransportSettings struct {
+	Network     string        `json:"net"`      // "tcp", "kcp", "ws", "h2", "quic", "grpc"
+	Security    string        `json:"tls"`      // "none", "tls"
+	WsSettings  WsSettings    `json:"wsSettings"`
+	GrpcSettings GrpcSettings `json:"grpcSettings"`
+}
+
+// WsSettings defines WebSocket-specific transport settings.
+type WsSettings struct {
+	Path    string `json:"path"`
+	Headers map[string]string `json:"headers"`
+}
+
+// GrpcSettings defines gRPC-specific transport settings.
+type GrpcSettings struct {
+	ServiceName string `json:"serviceName"`
+}
+
+// VmessConfigData defines the structure for a VMess config.
 type VmessConfigData struct {
-	V    string `json:"v"`
-	Add  string `json:"add"`
-	Port any    `json:"port"` // Port can be string or number
+	V          string   `json:"v"`
+	Add        string   `json:"add"`
+	Port       any      `json:"port"`
+	ID         string   `json:"id"`
+	Aid        int      `json:"aid"`
+	Type       string   `json:"type"` // Header type
+	Host       string   `json:"host"`
+	Path       string   `json:"path"`
+	TransportSettings
 }
 
-// VlessConfigData is a struct for validating the basic fields of a VLESS config.
+// VlessConfigData defines the structure for a VLESS config.
 type VlessConfigData struct {
-	ID         string `json:"id"` // UUID
-	Address    string `json:"add"`
-	Port       any    `json:"port"`
-	Encryption string `json:"encryption"`
+	ID         string   `json:"id"`
+	Address    string   `json:"add"`
+	Port       any      `json:"port"`
+	Encryption string   `json:"encryption"`
+	Flow       string   `json:"flow"`
+	TransportSettings
 }
 
-// ShadowsocksConfigData is a struct for validating the basic fields of a Shadowsocks config.
+// ShadowsocksConfigData defines the structure for a Shadowsocks config.
 type ShadowsocksConfigData struct {
 	Server     string `json:"server"`
 	ServerPort int    `json:"server_port"`
 	Password   string `json:"password"`
 	Method     string `json:"method"`
+	// Shadowsocks doesn't typically have complex transport settings in the same way,
+	// but we can include basic ones if needed in the future.
 }
 
-// TrojanConfigData is a struct for validating the basic fields of a Trojan config.
+// TrojanConfigData defines the structure for a Trojan config.
 type TrojanConfigData struct {
-	Server     string `json:"server"`
-	ServerPort int    `json:"server_port"`
-	Password   string `json:"password"`
+	Server     string   `json:"server"`
+	ServerPort int      `json:"server_port"`
+	Password   string   `json:"password"`
+	SNI        string   `json:"sni"`
+	TransportSettings
 }
+
+// isValidatable defines an interface for config data structs.
+type isValidatable interface {
+	validate() error
+}
+
+func (c VmessConfigData) validate() error {
+	if c.Add == "" || c.Port == nil || c.ID == "" {
+		return &ValidationError{Msg: "VMess config must include 'add', 'port', and 'id'"}
+	}
+	return nil
+}
+
+func (c VlessConfigData) validate() error {
+	if c.ID == "" || c.Address == "" || c.Port == nil {
+		return &ValidationError{Msg: "VLESS config must include 'id', 'add', and 'port'"}
+	}
+	return nil
+}
+
+func (c ShadowsocksConfigData) validate() error {
+	if c.Server == "" || c.ServerPort == 0 || c.Password == "" || c.Method == "" {
+		return &ValidationError{Msg: "Shadowsocks config must include 'server', 'server_port', 'password', and 'method'"}
+	}
+	return nil
+}
+
+func (c TrojanConfigData) validate() error {
+	if c.Server == "" || c.ServerPort == 0 || c.Password == "" {
+		return &ValidationError{Msg: "Trojan config must include 'server', 'server_port', and 'password'"}
+	}
+	return nil
+}
+
+
+// ValidationError is a custom error type for validation failures.
+type ValidationError struct {
+	Msg string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Msg
+}
+
+// validateAndDecode performs JSON unmarshaling and validation for a given protocol.
+func validateAndDecode(protocol string, data json.RawMessage) (isValidatable, error) {
+	var v isValidatable
+	switch protocol {
+	case "vmess":
+		v = &VmessConfigData{}
+	case "vless":
+		v = &VlessConfigData{}
+	case "shadowsocks":
+		v = &ShadowsocksConfigData{}
+	case "trojan":
+		v = &TrojanConfigData{}
+	default:
+		return nil, &ValidationError{Msg: "Protocol not supported"}
+	}
+
+	if err := json.Unmarshal(data, v); err != nil {
+		return nil, &ValidationError{Msg: "Invalid config_data format: " + err.Error()}
+	}
+
+	if err := v.validate(); err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 
 // CreateConfig is the handler for creating a new V2Ray configuration.
 func CreateConfig(c *gin.Context) {
@@ -59,49 +161,12 @@ func CreateConfig(c *gin.Context) {
 	}
 
 	// Validate config_data based on the protocol
-	switch payload.Protocol {
-	case "vmess":
-		var vmessData VmessConfigData
-		if err := json.Unmarshal(payload.ConfigData, &vmessData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
-			return
+	if _, err := validateAndDecode(payload.Protocol, payload.ConfigData); err != nil {
+		if verr, ok := err.(*ValidationError); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": verr.Msg})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "An unexpected error occurred during validation"})
 		}
-		if vmessData.Add == "" || vmessData.Port == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
-			return
-		}
-	case "vless":
-		var vlessData VlessConfigData
-		if err := json.Unmarshal(payload.ConfigData, &vlessData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VLESS config_data format"})
-			return
-		}
-		if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
-			return
-		}
-	case "shadowsocks":
-		var ssData ShadowsocksConfigData
-		if err := json.Unmarshal(payload.ConfigData, &ssData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Shadowsocks config_data format"})
-			return
-		}
-		if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
-			return
-		}
-	case "trojan":
-		var trojanData TrojanConfigData
-		if err := json.Unmarshal(payload.ConfigData, &trojanData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Trojan config_data format"})
-			return
-		}
-		if trojanData.Server == "" || trojanData.ServerPort == 0 || trojanData.Password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Trojan config_data must contain 'server', 'server_port', and 'password' fields"})
-			return
-		}
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Protocol not supported"})
 		return
 	}
 
@@ -238,47 +303,13 @@ func UpdateConfig(c *gin.Context) {
 	}
 	if payload.ConfigData != nil {
 		// Validate new config data before applying, based on the existing config's protocol
-		switch existingConfig.Protocol {
-		case "vmess":
-			var vmessData VmessConfigData
-			if err := json.Unmarshal(*payload.ConfigData, &vmessData); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VMess config_data format"})
-				return
+		if _, err := validateAndDecode(existingConfig.Protocol, *payload.ConfigData); err != nil {
+			if verr, ok := err.(*ValidationError); ok {
+				c.JSON(http.StatusBadRequest, gin.H{"error": verr.Msg})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "An unexpected error occurred during validation"})
 			}
-			if vmessData.Add == "" || vmessData.Port == nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "VMess config_data must contain 'add' and 'port' fields"})
-				return
-			}
-		case "vless":
-			var vlessData VlessConfigData
-			if err := json.Unmarshal(*payload.ConfigData, &vlessData); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid VLESS config_data format"})
-				return
-			}
-			if vlessData.ID == "" || vlessData.Address == "" || vlessData.Port == nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "VLESS config_data must contain 'id', 'add', and 'port' fields"})
-				return
-			}
-		case "shadowsocks":
-			var ssData ShadowsocksConfigData
-			if err := json.Unmarshal(*payload.ConfigData, &ssData); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Shadowsocks config_data format"})
-				return
-			}
-			if ssData.Server == "" || ssData.ServerPort == 0 || ssData.Password == "" || ssData.Method == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Shadowsocks config_data must contain 'server', 'server_port', 'password', and 'method' fields"})
-				return
-			}
-		case "trojan":
-			var trojanData TrojanConfigData
-			if err := json.Unmarshal(*payload.ConfigData, &trojanData); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Trojan config_data format"})
-				return
-			}
-			if trojanData.Server == "" || trojanData.ServerPort == 0 || trojanData.Password == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Trojan config_data must contain 'server', 'server_port', and 'password' fields"})
-				return
-			}
+			return
 		}
 		existingConfig.ConfigData = string(*payload.ConfigData)
 	}
