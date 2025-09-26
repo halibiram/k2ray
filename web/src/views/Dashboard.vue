@@ -17,9 +17,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useSystemStore } from '../stores/system'
+import { useWebSocket } from '../services/useWebSocket'
 import StatusCard from '../components/dashboard/StatusCard.vue'
 
 const systemStore = useSystemStore()
+
+// Initialize WebSocket connection
+useWebSocket()
 
 onMounted(() => {
   systemStore.fetchApiStatus()
