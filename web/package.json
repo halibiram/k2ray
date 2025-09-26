@@ -15,23 +15,26 @@
     "axios": "^1.12.2",
     "echarts": "^5.6.0",
     "pinia": "^3.0.3",
+    "qrcode.vue": "^3.6.0",
     "uuid": "^13.0.0",
     "vue": "^3.5.22",
     "vue-echarts": "^7.0.3",
+    "vue-i18n": "^11.1.12",
+    "vue-qrcode-reader": "^5.7.3",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.27.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
-    "vue-tsc": "^3.0.8",
-    "eslint": "^8.57.0",
-    "eslint-plugin-vue": "^9.27.0",
-    "@typescript-eslint/eslint-plugin": "^7.15.0",
-    "@typescript-eslint/parser": "^7.15.0"
+    "vue-tsc": "^3.0.8"
   }
 }

@@ -1,0 +1,315 @@
+openapi: 3.0.0
+info:
+  title: k2ray API
+  description: The API for the k2ray application.
+  version: "1.0.0"
+servers:
+  - url: /api/v1
+    description: Local server
+paths:
+  /system/status:
+    get:
+      summary: Get System Status
+      description: Returns the current status of the system.
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "running"
+  /auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user and returns a token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful authentication.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '401':
+          description: Unauthorized
+  /auth/refresh:
+    post:
+      summary: Refresh Token
+      description: Refreshes an authentication token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Successful token refresh.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized
+  /auth/logout:
+    post:
+      summary: User Logout
+      description: Logs out the current user.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful logout.
+  /users/me:
+    get:
+      summary: Get Current User
+      description: Returns the current authenticated user's information.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /configs:
+    get:
+      summary: List Configurations
+      description: Returns a list of all configurations.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Config'
+    post:
+      summary: Create Configuration
+      description: Creates a new configuration.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '201':
+          description: Configuration created successfully.
+  /configs/{id}:
+    get:
+      summary: Get Configuration
+      description: Returns a single configuration by its ID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+    put:
+      summary: Update Configuration
+      description: Updates an existing configuration.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '200':
+          description: Configuration updated successfully.
+    delete:
+      summary: Delete Configuration
+      description: Deletes a configuration by its ID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Configuration deleted successfully.
+  /system/active-config:
+    get:
+      summary: Get Active Configuration
+      description: Returns the currently active configuration.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+    post:
+      summary: Set Active Configuration
+      description: Sets the active configuration.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        '200':
+          description: Active configuration set successfully.
+  /system/info:
+    get:
+      summary: Get System Info
+      description: Returns system information.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /system/logs:
+    get:
+      summary: Get System Logs
+      description: Returns system logs.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /v2ray/start:
+    post:
+      summary: Start V2Ray
+      description: Starts the V2Ray process.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: V2Ray started successfully.
+  /v2ray/stop:
+    post:
+      summary: Stop V2Ray
+      description: Stops the V2Ray process.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: V2Ray stopped successfully.
+  /v2ray/status:
+    get:
+      summary: Get V2Ray Status
+      description: Returns the status of the V2Ray process.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /metrics/traffic:
+    get:
+      summary: Get Traffic Metrics
+      description: Returns traffic metrics.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /metrics/connections:
+    get:
+      summary: Get Connection Metrics
+      description: Returns connection metrics.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /metrics/performance:
+    get:
+      summary: Get Performance Metrics
+      description: Returns performance metrics.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A successful response.
+  /ws:
+    get:
+      summary: WebSocket
+      description: Establishes a WebSocket connection.
+      security:
+        - BearerAuth: []
+      responses:
+        '101':
+          description: Switching protocols.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+    Config:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        data:
+          type: object
