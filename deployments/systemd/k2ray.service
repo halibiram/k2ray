@@ -1,0 +1,17 @@
+[Unit]
+Description=K2Ray - A unified proxy service manager
+Documentation=https://github.com/your-repo/k2ray
+After=network.target
+
+[Service]
+Type=simple
+User=k2ray
+Group=k2ray
+ExecStart=/usr/local/bin/k2ray --config /etc/k2ray/
+WorkingDirectory=/var/lib/k2ray
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=infinity
+
+[Install]
+WantedBy=multi-user.target

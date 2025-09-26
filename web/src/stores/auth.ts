@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '../services/api'
-import { useRouter } from 'vue-router'
 
 // Define the structure of the login credentials
 interface LoginCredentials {
