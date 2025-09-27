@@ -2,13 +2,21 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"k2ray/docs"
 	"k2ray/internal/api/handlers"
 	"k2ray/internal/api/middleware"
 )
 
 // SetupRouter configures the routes for the application.
 func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
+	// Swagger documentation endpoint
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Apply global middleware
+	router.Use(middleware.ErrorHandlerMiddleware())
 	router.Use(middleware.HTTPSRedirectMiddleware())
 	router.Use(middleware.CORSMiddleware())
 
@@ -23,13 +31,15 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 		}
 
 		authRoutes := apiV1.Group("/auth")
-		if enableRateLimiter {
-			// Apply rate limiting to authentication routes
-			authLimiter := middleware.RateLimiterMiddleware("10-M") // 10 requests per minute
-			authRoutes.Use(authLimiter)
-		}
 		{
-			authRoutes.POST("/login", handlers.Login)
+			// Apply a stricter rate limit to the login endpoint, which is based on IP.
+			if enableRateLimiter {
+				loginLimiter := middleware.RateLimiterMiddleware("5-M") // 5 requests per minute
+				authRoutes.POST("/login", loginLimiter, handlers.Login)
+			} else {
+				authRoutes.POST("/login", handlers.Login)
+			}
+
 			authRoutes.POST("/login/2fa", handlers.Login2FA) // New endpoint for 2FA verification
 			authRoutes.POST("/refresh", handlers.Refresh)
 		}
@@ -37,6 +47,12 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 		// Protected routes (authentication required)
 		protected := apiV1.Group("/")
 		protected.Use(middleware.AuthMiddleware())
+
+		// Apply a general rate limit to all protected routes (per-user).
+		if enableRateLimiter {
+			protectedLimiter := middleware.RateLimiterMiddleware("100-M") // 100 requests per minute
+			protected.Use(protectedLimiter)
+		}
 		{
 			protected.POST("/auth/logout", handlers.Logout)
 
@@ -53,6 +69,7 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 					adminUserRoutes.GET("/:id", handlers.GetUser)
 					adminUserRoutes.PUT("/:id", handlers.UpdateUser)
 					adminUserRoutes.DELETE("/:id", handlers.DeleteUser)
+					adminUserRoutes.POST("/bulk-delete", handlers.BulkDeleteUsers)
 				}
 			}
 
@@ -63,6 +80,7 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 				configRoutes.GET("/:id", handlers.GetConfig)
 				configRoutes.PUT("/:id", handlers.UpdateConfig)
 				configRoutes.DELETE("/:id", handlers.DeleteConfig)
+				configRoutes.POST("/bulk-delete", handlers.BulkDeleteConfigs)
 			}
 
 			// Protected system routes

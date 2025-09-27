@@ -171,9 +171,12 @@ func TestV2rayConfigCRUD(t *testing.T) {
 	listW := httptest.NewRecorder()
 	testRouter.ServeHTTP(listW, listReq)
 	assert.Equal(t, http.StatusOK, listW.Code)
-	var configs []db.Configuration
-	json.Unmarshal(listW.Body.Bytes(), &configs)
-	assert.NotEmpty(t, configs)
+	var listResponse struct {
+		Data []db.Configuration `json:"data"`
+	}
+	err := json.Unmarshal(listW.Body.Bytes(), &listResponse)
+	assert.NoError(t, err, "Failed to unmarshal paginated response")
+	assert.NotEmpty(t, listResponse.Data)
 
 	// 4. Update
 	updatePayload := `{"name": "My Updated Server"}`

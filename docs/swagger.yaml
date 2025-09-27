@@ -1,0 +1,625 @@
+basePath: /api/v1
+definitions:
+  db.Configuration:
+    properties:
+      configData:
+        description: Stored as a JSON string
+        type: string
+      createdAt:
+        type: string
+      id:
+        format: int64
+        type: integer
+      name:
+        type: string
+      protocol:
+        type: string
+      updatedAt:
+        type: string
+      userID:
+        format: int64
+        type: integer
+    type: object
+  db.UserRole:
+    enum:
+    - admin
+    - user
+    type: string
+    x-enum-varnames:
+    - AdminRole
+    - RoleUser
+  handlers.BulkDeleteRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  handlers.CreateConfigPayload:
+    properties:
+      config_data:
+        type: object
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+      protocol:
+        enum:
+        - vmess
+        - vless
+        - shadowsocks
+        - trojan
+        type: string
+    required:
+    - config_data
+    - name
+    - protocol
+    type: object
+  handlers.CreateUserRequest:
+    properties:
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/db.UserRole'
+        enum:
+        - admin
+        - user
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+  handlers.PaginatedConfigsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/db.Configuration'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.PaginationMeta'
+    type: object
+  handlers.PaginatedUsersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handlers.UserResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.PaginationMeta'
+    type: object
+  handlers.PaginationMeta:
+    properties:
+      current_page:
+        type: integer
+      items_per_page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  handlers.UpdateConfigPayload:
+    properties:
+      config_data:
+        type: object
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      role:
+        allOf:
+        - $ref: '#/definitions/db.UserRole'
+        enum:
+        - admin
+        - user
+    required:
+    - role
+    type: object
+  handlers.UserResponse:
+    properties:
+      id:
+        type: integer
+      role:
+        $ref: '#/definitions/db.UserRole'
+      username:
+        type: string
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      details:
+        additionalProperties:
+          type: string
+        type: object
+      error:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the API for K2Ray, a modern V2Ray management panel.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: K2Ray API
+  version: "1.0"
+paths:
+  /configs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of V2Ray configurations for the authenticated
+        user.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - default: id
+        description: Field to sort by (id, name, protocol, created_at, updated_at)
+        in: query
+        name: sort_by
+        type: string
+      - default: ASC
+        description: Sort order (ASC, DESC)
+        in: query
+        name: order
+        type: string
+      - description: Filter by configuration name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by protocol (vmess, vless, etc.)
+        in: query
+        name: protocol
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PaginatedConfigsResponse'
+        "500":
+          description: Failed to retrieve configurations
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List V2Ray configurations
+      tags:
+      - Configs
+    post:
+      consumes:
+      - application/json
+      description: Creates a new V2Ray configuration for the authenticated user.
+      parameters:
+      - description: New Configuration Details
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateConfigPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/db.Configuration'
+        "400":
+          description: Invalid request payload or config data
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to create configuration
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new V2Ray configuration
+      tags:
+      - Configs
+  /configs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a single V2Ray configuration by its ID.
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Configuration not found or access denied
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to delete configuration
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a V2Ray configuration
+      tags:
+      - Configs
+    get:
+      consumes:
+      - application/json
+      description: Retrieves details for a single V2Ray configuration by its ID.
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/db.Configuration'
+        "404":
+          description: Configuration not found or access denied
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to retrieve configuration
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a single V2Ray configuration
+      tags:
+      - Configs
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific V2Ray configuration for the authenticated user.
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Configuration Details
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateConfigPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/db.Configuration'
+        "400":
+          description: Invalid request payload or config data
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Configuration not found or access denied
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to update configuration
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a V2Ray configuration
+      tags:
+      - Configs
+  /configs/bulk-delete:
+    post:
+      consumes:
+      - application/json
+      description: Deletes multiple V2Ray configurations at once based on a list of
+        IDs.
+      parameters:
+      - description: Configuration IDs to delete
+        in: body
+        name: ids
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BulkDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Configurations deleted successfully, deleted_count:
+            count'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to delete configurations
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Bulk delete V2Ray configurations
+      tags:
+      - Configs
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of users with optional filtering and
+        sorting.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - default: id
+        description: Field to sort by (id, username, role)
+        in: query
+        name: sort_by
+        type: string
+      - default: ASC
+        description: Sort order (ASC, DESC)
+        in: query
+        name: order
+        type: string
+      - description: Filter by user role (admin, user)
+        in: query
+        name: role
+        type: string
+      - description: Filter by username (partial match)
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PaginatedUsersResponse'
+        "500":
+          description: Failed to retrieve users
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user with a username, password, and role. Only accessible
+        by admins.
+      parameters:
+      - description: New User Details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.UserResponse'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "409":
+          description: Username already exists
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to create user
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new user
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a single user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden action
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to delete user
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Retrieves details for a single user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.UserResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to retrieve user
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a single user
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Updates the role of a specific user. Admins cannot change their
+        own role.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New Role
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: User updated successfully'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid user ID or request payload
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden action
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to update user
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a user's role
+      tags:
+      - Users
+  /users/bulk-delete:
+    post:
+      consumes:
+      - application/json
+      description: Deletes multiple users at once based on a list of IDs.
+      parameters:
+      - description: User IDs to delete
+        in: body
+        name: ids
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BulkDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Users deleted successfully, deleted_count: count'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden action
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Failed to delete users
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Bulk delete users
+      tags:
+      - Users
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
