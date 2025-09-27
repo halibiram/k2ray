@@ -1,47 +1,45 @@
-# FAQ (Frequently Asked Questions)
+# Frequently Asked Questions (FAQ)
 
-Here are some frequently asked questions about the k2ray project.
-
----
-
-### **Q1: What is k2ray?**
-
-**A1:** k2ray is a web-based management panel for V2Ray, a powerful network proxy tool. It provides a user-friendly interface to manage V2Ray configurations, monitor system status, and view traffic metrics, all from a web browser.
+This page answers some of the most common questions about the K2Ray project.
 
 ---
 
-### **Q2: What technologies is k2ray built with?**
+### **Q: What is K2Ray?**
 
-**A2:** The project is built with a modern technology stack:
-*   **Backend**: Go (with the Gin framework)
-*   **Frontend**: Vue.js 3 (with Vite, Pinia, and Tailwind CSS)
-*   **Database**: SQLite (for simplicity and portability)
+**A:** K2Ray is a web-based management panel for V2Ray. It provides a user-friendly interface to help you create, manage, and monitor V2Ray configurations and users, simplifying the process of running a V2Ray server.
 
 ---
 
-### **Q3: Can I use a different database like PostgreSQL or MySQL?**
+### **Q: Is K2Ray free?**
 
-**A3:** Currently, the application is designed to work with SQLite out of the box. While the database logic is encapsulated in the `internal/db` package, adding support for other databases would require code modifications to include the appropriate database driver and potentially adjust SQL queries.
-
----
-
-### **Q4: Is the application secure?**
-
-**A4:** The application uses JWT (JSON Web Tokens) for authenticating users, which is a standard and secure method for APIs. However, the overall security of your installation depends on your environment and configuration. **It is critical to change the default `JWT_SECRET`** to a strong, unique value for any production deployment.
+**A:** Yes, K2Ray is open-source software and is free to use. You can find the source code on its GitHub repository.
 
 ---
 
-### **Q5: How do I run k2ray in production?**
+### **Q: What technologies does K2Ray use?**
 
-**A5:** For production, you should:
-1.  **Build the Go backend**: Run `go build -o k2ray_server ./cmd/k2ray` to create a compiled executable.
-2.  **Build the frontend assets**: Run `npm run build` in the `web/` directory.
-3.  **Serve the frontend**: Configure the Go backend to serve the static files from the `web/dist` directory, or use a dedicated web server like Nginx or Caddy to serve the frontend and proxy API requests to the backend server.
-4.  **Use a process manager**: Run the backend executable (`k2ray_server`) using a process manager like `systemd` or `supervisor` to ensure it runs continuously and restarts automatically if it crashes.
-5.  **Set environment variables**: Do not rely on the `.env` file in production. Set the `DATABASE_URL` and `JWT_SECRET` as environment variables in your deployment environment.
+**A:** The application is built with a Go backend and a Vue.js frontend. It uses SQLite as its default database for simplicity.
 
 ---
 
-### **Q6: How can I contribute to the project?**
+### **Q: How do I update K2Ray to a new version?**
 
-**A6:** Contributions are welcome! Please refer to the `CONTRIBUTING.md` file (if available) for guidelines on how to contribute. Typically, you would fork the repository, create a new branch for your feature or bug fix, and then submit a pull request.
+**A:** To update, you can download the latest release from the [GitHub Releases page](https://github.com/your-username/k2ray/releases), stop the currently running application, replace the old executable with the new one, and then restart it. Your database (`k2ray.db`) and `.env` file will be preserved.
+
+---
+
+### **Q: How do I report a bug or suggest a feature?**
+
+**A:** We appreciate your feedback! You can report bugs or suggest new features by creating an "Issue" on our [GitHub repository issues page](https://github.com/your-username/k2ray/issues). Please provide as much detail as possible.
+
+---
+
+### **Q: Where is my data stored?**
+
+**A:** By default, all your data (users, configurations, etc.) is stored in a single file named `k2ray.db` in the same directory as the application. You can change the path to this file using the `K2RAY_DB_PATH` environment variable.
+
+---
+
+### **Q: How can I contribute to the project?**
+
+**A:** We welcome contributions! If you are a developer, please read our [Contributing Guide](../developer/contributing.md) to get started.
