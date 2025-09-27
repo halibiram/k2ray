@@ -1,11 +1,13 @@
 import time
 from collections import deque
+from core.security_manager import SafetyManager
 
 class PerformanceMonitor:
-    def __init__(self, keenetic_engine):
+    def __init__(self, keenetic_engine, safety_manager: SafetyManager = None):
         self.engine = keenetic_engine
         self.history = deque(maxlen=100)  # Store last 100 data points
         self.alerts = []
+        self.safety_manager = safety_manager or SafetyManager()
 
     def collect_metrics(self):
         """Collects current metrics from the Keenetic engine."""
@@ -54,7 +56,15 @@ class PerformanceMonitor:
         return False
 
     def generate_alert(self, message):
-        """Generates an alert for the system."""
+        """
+        Generates an alert for the system and triggers safety mechanisms
+        for critical alerts.
+        """
         print(f"ALERT: {message}")
         self.alerts.append({"message": message, "timestamp": time.time()})
-        # This is a hook for a more advanced alerting system (GÖREV 4)
+
+        # --- Safety Trigger Integration (GÖREV 3 -> GÖREV 4) ---
+        if message == "Line is down!":
+            print("CRITICAL ALERT: Triggering emergency safety procedures.")
+            self.safety_manager.emergency_rollback()
+        # --- End Safety Trigger Integration ---
