@@ -8,6 +8,9 @@ LOG_FILE = os.path.join("logs", "framework.log")
 CONFIG_FILE = os.path.join("config", "config.json")
 
 # --- Logging Setup ---
+# Ensure the log directory exists before setting up the handler
+os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
