@@ -1,0 +1,10 @@
+{
+    "status": "Up",
+    "snr_margin_down": 25.0,
+    "snr_margin_up": 28.0,
+    "attenuation_down": 18.5,
+    "attenuation_up": 12.0,
+    "data_rate_down": 32540,
+    "data_rate_up": 5120,
+    "crc_errors": 0
+}

@@ -1,0 +1,39 @@
+{
+  "comment": "This file defines the rules for different optimization profiles. Used by ParameterManipulator in GÖREV 2.",
+  "profiles": {
+    "max_speed": {
+      "description": "Agressive profile for maximum possible speed, may sacrifice some stability.",
+      "simulate_short_line": true,
+      "parameters": {
+        "target_snr_margin": 55.0,
+        "inp_downstream": 0,
+        "inp_upstream": 0,
+        "ginp": "disabled",
+        "bitswap": "enabled",
+        "sra": "disabled"
+      }
+    },
+    "stable": {
+      "description": "A conservative profile for maximum stability, may result in slightly lower speeds.",
+      "parameters": {
+        "target_snr_margin": 35.0,
+        "inp_downstream": 60,
+        "inp_upstream": 60,
+        "ginp": "enabled",
+        "bitswap": "enabled",
+        "sra": "enabled"
+      }
+    },
+    "balanced": {
+      "description": "A balanced profile for good speed and stability.",
+      "parameters": {
+        "target_snr_margin": 45.0,
+        "inp_downstream": 50,
+        "inp_upstream": 50,
+        "ginp": "enabled",
+        "bitswap": "enabled",
+        "sra": "enabled"
+      }
+    }
+  }
+}

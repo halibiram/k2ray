@@ -1,0 +1,39 @@
+/* dsl_bypass_ultra/web/static/style.css */
+
+/* GÖREV 3'te bu dosya doldurulacaktır. */
+/* This file will be populated in TASK 3 to style the web dashboard. */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    background-color: #007bff;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 0;
+}
+
+#status-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+    color: #888;
+    font-size: 0.9em;
+}

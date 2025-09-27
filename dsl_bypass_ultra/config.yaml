@@ -1,0 +1,45 @@
+modem:
+  host: 192.168.1.1
+  username: admin
+  password: YOUR_PASSWORD_HERE
+optimization:
+  profile: max_speed
+  profiles:
+    max_speed:
+      description: Agressive profile for maximum possible speed, may sacrifice some
+        stability.
+      simulate_short_line: true
+      parameters:
+        target_snr_margin: 55.0
+        inp_downstream: 0
+        inp_upstream: 0
+        ginp: disabled
+        bitswap: enabled
+        sra: disabled
+    stable:
+      description: A conservative profile for maximum stability, may result in slightly
+        lower speeds.
+      parameters:
+        target_snr_margin: 35.0
+        inp_downstream: 60
+        inp_upstream: 60
+        ginp: enabled
+        bitswap: enabled
+        sra: enabled
+    balanced:
+      description: A balanced profile for good speed and stability.
+      parameters:
+        target_snr_margin: 45.0
+        inp_downstream: 50
+        inp_upstream: 50
+        ginp: enabled
+        bitswap: enabled
+        sra: enabled
+monitoring:
+  enabled: true
+  interval: 10
+security:
+  auto_backup_on_change: true
+  backup_directory: backups/
+  safety_checks:
+    min_snr: 4.0

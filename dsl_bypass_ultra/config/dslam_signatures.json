@@ -1,0 +1,27 @@
+{
+  "comment": "This file contains signatures to identify DSLAM vendors and models. GÖREV 2'de DslamSpoofer tarafından kullanılabilir.",
+  "signatures": [
+    {
+      "vendor": "Broadcom",
+      "identifier_string": "BRCM",
+      "version_pattern": "(\\d{2}\\.\\d{2})",
+      "known_vulnerabilities": [
+        "Allows high SNR margin offset"
+      ]
+    },
+    {
+      "vendor": "Infineon",
+      "identifier_string": "IFTN",
+      "version_pattern": null,
+      "known_vulnerabilities": []
+    },
+    {
+      "vendor": "Nokia/Alcatel-Lucent",
+      "identifier_string": "ALCB",
+      "version_pattern": "(\\d{1}\\.\\d{2}\\.\\d{2})",
+      "known_vulnerabilities": [
+        "Sensitive to rapid reconnects"
+      ]
+    }
+  ]
+}
