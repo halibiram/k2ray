@@ -25,7 +25,7 @@ func main() {
 	router := gin.Default()
 
 	// Setup routes from the internal/api package
-	api.SetupRouter(router)
+	api.SetupRouter(router, true) // Enable rate limiting in production
 
 	// In a real application, the port should be configurable.
 	// For now, we'll hardcode it to 8080.

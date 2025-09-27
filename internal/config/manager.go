@@ -13,6 +13,7 @@ import (
 type Config struct {
 	DatabaseURL string
 	JWTSecret   string
+	AppName     string
 }
 
 // AppConfig is a singleton instance of the Config struct.
@@ -45,6 +46,7 @@ func LoadConfig(path string) {
 		AppConfig = &Config{
 			DatabaseURL: getEnv("DATABASE_URL", "./k2ray.db"),
 			JWTSecret:   getEnv("JWT_SECRET", "default-secret-please-change"),
+			AppName:     getEnv("APP_NAME", "k2ray"),
 		}
 	})
 }

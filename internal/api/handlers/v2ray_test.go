@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	}
 
 	testRouter = gin.Default()
-	api.SetupRouter(testRouter)
+	api.SetupRouter(testRouter, false) // Disable rate limiting for tests
 
 	code := m.Run()
 
