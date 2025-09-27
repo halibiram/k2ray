@@ -17,16 +17,16 @@
 
     <!-- Step 2: Scan QR Code -->
     <div v-if="step === 2" class="space-y-4">
-      <p class="text-gray-600 dark:text-gray-400">Scan the image below with your authenticator app (e.g., Google Authenticator).</p>
+      <p>Scan the image below with your authenticator app (e.g., Google Authenticator).</p>
       <div class="flex justify-center p-4 bg-white rounded-md">
         <img :src="qrCodeDataUrl" alt="2FA QR Code" />
       </div>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <p class="text-sm text-gray-500">
         Or manually enter this code:
-        <code class="px-2 py-1 font-mono bg-gray-200 rounded dark:bg-gray-700 text-gray-800 dark:text-gray-200">{{ secret }}</code>
+        <code class="px-2 py-1 font-mono bg-gray-200 rounded dark:bg-gray-700">{{ secret }}</code>
       </p>
       <form @submit.prevent="verifyAndEnable">
-        <label for="verify-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Verification Code</label>
+        <label for="verify-code" class="block text-sm font-medium">Verification Code</label>
         <input
           id="verify-code"
           v-model="verificationCode"

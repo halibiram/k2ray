@@ -1,5 +1,5 @@
 <template>
-  <v-chart class="chart" :option="chartOption" :theme="themeStore.theme" autoresize />
+  <v-chart class="chart" :option="chartOption" autoresize />
 </template>
 
 <script setup lang="ts">
@@ -15,8 +15,6 @@ import {
 } from 'echarts/components';
 import VChart from 'vue-echarts';
 import { useMetricsStore } from '../../stores/metrics';
-import { useThemeStore } from '../../stores/theme';
-import 'echarts/theme/dark.js';
 
 // Initialize ECharts components
 use([
@@ -29,7 +27,6 @@ use([
 ]);
 
 const metricsStore = useMetricsStore();
-const themeStore = useThemeStore();
 
 const chartOption = computed(() => ({
   tooltip: {
@@ -37,9 +34,6 @@ const chartOption = computed(() => ({
   },
   legend: {
     data: metricsStore.getMetrics.datasets.map(d => d.label),
-    textStyle: {
-      color: themeStore.theme === 'dark' ? '#fff' : '#333',
-    },
   },
   grid: {
     left: '3%',

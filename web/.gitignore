@@ -42,20 +42,20 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Snowpack dependency directory (https://www.snowpack.dev/)
-web_modules
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
 
 # TypeScript cache file
 *.tsbuildinfo
 
-# Optional npm cache directory
-.npm
-
 # Optional eslint cache
 .eslintcache
 
+# Optional stylelint cache
+.stylelintcache
+
 # Microbundle cache
-.rts2_cache/
+.rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
@@ -76,7 +76,7 @@ web_modules
 .env.production.local
 .env.local
 
-# parcel-bundler cache files
+# parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
 
@@ -91,38 +91,42 @@ dist
 # Nuxt.js static build output
 .output
 
-# Gatsby files
+# Docusaurus build output
+.docusaurus
+
+# Gatsby build output
 .cache/
-# Comment in the public line in if your project uses Gatsby and not a different framework
-# public
+public
 
 # vuepress build output
 .vuepress/dist
 
-# Docusaurus build output
-.docusaurus
-
-# VuePress dev server cache
+# VuePress v2 build output
 .temp
+.vitepress/cache
+.vitepress/dist
 
 # SvelteKit build output
 .svelte-kit
 build
 
-# Remastered build output
-.remastered
+# SvelteKit internal files
+.svelte-kit
 
-# Vite build output
+# SolidStart build output
+.solid
 dist
-dist-ssr
-*.js.map
-*.css.map
+
+# Remastered build output
+.build
 
 # Astro build output
 dist/
 .astro/
 
-# Vitest
-/coverage
-.vitest-pool
-.vitest-result.json
+# Vitest browser coverage directory
+.vitest-browser
+
+# Playwright reports
+playwright-report/
+playwright/.cache/
