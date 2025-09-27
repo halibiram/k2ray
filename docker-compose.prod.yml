@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Production Backend Service
+  backend:
+    # The image name is set via an environment variable for flexibility.
+    # It should be built and pushed by the CI/CD pipeline.
+    # Example: export IMAGE_BACKEND=ghcr.io/my-org/k2ray/k2ray-backend:latest
+    image: ${IMAGE_BACKEND:-ghcr.io/your-username/k2ray-backend:latest}
+    container_name: k2ray-backend-prod
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=release
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER} # Use environment variables for sensitive data
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - k2ray-net
+
+  # Production Frontend Service
+  frontend:
+    # The image name is set via an environment variable.
+    # Example: export IMAGE_FRONTEND=ghcr.io/my-org/k2ray/k2ray-frontend:latest
+    image: ${IMAGE_FRONTEND:-ghcr.io/your-username/k2ray-frontend:latest}
+    container_name: k2ray-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80" # Serve on standard HTTP port
+    networks:
+      - k2ray-net
+
+  # Production PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: k2ray-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - k2ray-net
+
+  # Production Redis
+  redis:
+    image: redis:7-alpine
+    container_name: k2ray-redis-prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - k2ray-net
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  k2ray-net:
+    driver: bridge
