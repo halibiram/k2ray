@@ -1,0 +1,11 @@
+database:
+  host: "prod.db.example.com"
+  user: "prod_user"
+  password: "encrypted_password_placeholder" # Bu, gerçek bir dağıtımda şifrelenmiş bir değerle değiştirilmelidir
+
+logging:
+  level: "warning"
+  file: "/var/log/prod.log"
+
+features:
+  hot_reload: false

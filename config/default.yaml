@@ -1,0 +1,17 @@
+app:
+  name: "ConfigManagerApp"
+  version: "1.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "admin"
+  password: "password" # Bu, hassas veri yönetimi uygulandığında şifrelenecektir
+
+logging:
+  level: "info"
+  file: "/var/log/app.log"
+
+features:
+  hot_reload: true
+  encryption: false

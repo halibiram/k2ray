@@ -1,0 +1,11 @@
+database:
+  host: "localhost"
+  user: "test_user"
+  password: "test_password"
+  db_name: "test_db"
+
+logging:
+  level: "error"
+
+features:
+  encryption: false
