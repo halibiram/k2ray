@@ -1,19 +1,17 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
+# Go build artifacts
+k2ray-server
+*.exe
+*.out
 
-# IDE / Editor
-.vscode/
-.idea/
+# Log files
+*.log
+
+# Frontend dependencies
+web/node_modules
+web/dist
 
 # Test artifacts
-.pytest_cache/
-.coverage
-
-# Log dosyaları
-*.log
+web/test-results/
+web/playwright-report/
+web/tests/e2e/*.png
+web/tests/e2e/*.spec.ts-snapshots/

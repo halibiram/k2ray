@@ -10,7 +10,7 @@ type UserRole string
 
 const (
 	AdminRole UserRole = "admin"
-	UserRole  UserRole = "user"
+	RoleUser  UserRole = "user"
 )
 
 // User represents a user in the system.

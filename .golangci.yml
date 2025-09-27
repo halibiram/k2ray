@@ -1,0 +1,88 @@
+run:
+  timeout: 5m
+  skip-dirs:
+    - web
+    - tests
+    - scripts
+    - deployments
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 15
+  maligned:
+    suggest-new: true
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  misspell:
+    locale: US
+  funlen:
+    lines: 100
+    statements: 50
+  gocognit:
+    min-complexity: 20
+  errcheck:
+    # report about not checking of errors in type assertions: `a, ok := b.(MyStruct)`
+    check-type-assertions: true
+    # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`
+    check-blank: true
+  gosec:
+    # To select a subset of rules to run.
+    # Available rules: https://github.com/securego/gosec#available-rules
+    includes:
+      - G101 # Look for hardcoded credentials
+      - G102 # Bind to all interfaces
+      - G103 # Use of unsafe block
+      - G104 # Errors unhandled
+      - G106 # Use of ssh.InsecureIgnoreHostKey
+      - G204 # Subprocess launched with variable
+      - G301 # Poor file permissions
+      - G302 # Poor file permissions
+      - G401 # Use of weak cryptographic primitive
+      - G402 # Look for bad TLS connection settings
+      - G404 # Insecure random number source
+      - G501 # Import blacklist: crypto/md5
+      - G505 # Import blacklist: crypto/sha1
+  stylecheck:
+    checks: ["all", "-ST1000", "-ST1003", "-ST1020", "-ST1021", "-ST1022"]
+
+linters:
+  enable-all: true
+  disable:
+    # deprecated
+    - maligned
+    - scopelint
+    - interfacer
+    # not useful
+    - exhaustivestruct
+    - nonamedreturns
+    - nosnakecase
+    - varcheck
+    - deadcode
+    - structcheck
+    - ifshort
+    - golint
+    - contextcheck
+    - rowserrcheck
+    - sqlclosecheck
+    - wastedassign
+    - typecheck
+    - ineffassign
+    - gocyclo
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - gocognit
+        - goconst
+        - gosec
+        - dupl
+        - errcheck
+        - bodyclose
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
