@@ -17,12 +17,12 @@ const cardColor = computed(() => {
   switch (props.status) {
     case 'online':
     case 'running':
-      return 'bg-green-500'
+      return 'bg-green-500 dark:bg-green-600'
     case 'offline':
     case 'stopped':
-      return 'bg-red-500'
+      return 'bg-red-500 dark:bg-red-600'
     default:
-      return 'bg-gray-400'
+      return 'bg-gray-400 dark:bg-gray-500'
   }
 })
 
