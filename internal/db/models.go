@@ -5,11 +5,20 @@ import (
 	"time"
 )
 
+// UserRole defines the type for user roles.
+type UserRole string
+
+const (
+	AdminRole UserRole = "admin"
+	UserRole  UserRole = "user"
+)
+
 // User represents a user in the system.
 type User struct {
 	ID                     int64
 	Username               string
 	PasswordHash           string
+	Role                   UserRole
 	TwoFactorSecret        sql.NullString
 	TwoFactorEnabled       bool
 	TwoFactorRecoveryCodes sql.NullString

@@ -11,8 +11,9 @@ import (
 
 // Claims defines the structure of the JWT claims for this application.
 type Claims struct {
-	UserID   int64  `json:"user_id"`
-	Username string `json:"username"`
+	UserID   int64        `json:"user_id"`
+	Username string       `json:"username"`
+	Role     db.UserRole  `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -24,16 +25,16 @@ type TwoFactorClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateTokens creates both an access token and a refresh token for a given username.
-func GenerateTokens(userID int64, username string) (accessToken string, refreshToken string, err error) {
+// GenerateTokens creates both an access token and a refresh token for a given user.
+func GenerateTokens(user db.User) (accessToken string, refreshToken string, err error) {
 	// Generate the access token (short-lived)
-	accessToken, err = generateToken(userID, username, 15*time.Minute)
+	accessToken, err = generateToken(user, 15*time.Minute)
 	if err != nil {
 		return "", "", err
 	}
 
 	// Generate the refresh token (long-lived)
-	refreshToken, err = generateToken(userID, username, 7*24*time.Hour) // 7 days
+	refreshToken, err = generateToken(user, 7*24*time.Hour) // 7 days
 	if err != nil {
 		return "", "", err
 	}
@@ -41,16 +42,17 @@ func GenerateTokens(userID int64, username string) (accessToken string, refreshT
 	return accessToken, refreshToken, nil
 }
 
-// generateToken is a helper function to create a new JWT with a specific username and expiration.
-func generateToken(userID int64, username string, expiration time.Duration) (string, error) {
+// generateToken is a helper function to create a new JWT with a specific user and expiration.
+func generateToken(user db.User, expiration time.Duration) (string, error) {
 	if config.AppConfig.JWTSecret == "" {
 		return "", errors.New("JWT secret is not configured")
 	}
 
 	expirationTime := time.Now().Add(expiration)
 	claims := &Claims{
-		UserID:   userID,
-		Username: username,
+		UserID:   user.ID,
+		Username: user.Username,
+		Role:     user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(), // JTI (JWT ID)
 			ExpiresAt: jwt.NewNumericDate(expirationTime),

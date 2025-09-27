@@ -5,10 +5,10 @@ import (
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/db"
 	"k2ray/internal/system"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 const ActiveConfigKey = "active_config_id"
@@ -45,7 +45,7 @@ func SetActiveConfig(c *gin.Context) {
 	upsertSQL := `INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;`
 	_, err = db.DB.Exec(upsertSQL, ActiveConfigKey, payload.ConfigID)
 	if err != nil {
-		log.Printf("Error setting active config: %v", err)
+		log.Error().Err(err).Msg("Error setting active config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set active configuration"})
 		return
 	}
@@ -82,7 +82,7 @@ func GetSystemInfo(c *gin.Context) {
 func GetSystemLogs(c *gin.Context) {
 	logs, err := system.GetSystemLogs()
 	if err != nil {
-		log.Printf("Error reading system logs: %v", err)
+		log.Error().Err(err).Msg("Error reading system logs")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve system logs"})
 		return
 	}

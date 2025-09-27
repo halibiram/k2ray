@@ -2,28 +2,30 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/auth"
 	"k2ray/internal/db"
+	"k2ray/internal/security"
 	"k2ray/internal/twofactor"
 	"k2ray/internal/utils"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // LoginPayload defines the expected JSON structure for a login request.
 type LoginPayload struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required,min=3"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 // Login2FAPayload defines the structure for the 2FA verification step.
 type Login2FAPayload struct {
 	TwoFactorToken string `json:"two_factor_token" binding:"required"`
-	Code           string `json:"code" binding:"required"`
+	Code           string `json:"code" binding:"required,numeric,len=6"`
 }
 
 // RefreshPayload defines the expected JSON structure for a token refresh request.
@@ -39,31 +41,43 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 1. Fetch user from the database by username
+	ip := c.ClientIP()
+	username := payload.Username
+
+	if security.IsLockedOut(username) || security.IsLockedOut(ip) {
+		details := fmt.Sprintf("Attempted login for locked out user '%s'", username)
+		security.LogEvent(c, security.LoginFailure, 0, details)
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many failed login attempts. Please try again later."})
+		return
+	}
+
 	user := &db.User{}
-	err := db.DB.QueryRow("SELECT id, username, password_hash, two_factor_enabled FROM users WHERE username = ?", payload.Username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.TwoFactorEnabled)
+	err := db.DB.QueryRow("SELECT id, username, password_hash, role, two_factor_enabled FROM users WHERE username = ?", username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.Role, &user.TwoFactorEnabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			security.RecordFailedAttempt(username)
+			security.RecordFailedAttempt(ip)
+			security.LogEvent(c, security.LoginFailure, 0, "Invalid username")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}
-		log.Printf("Database error on login for user %s: %v", payload.Username, err)
+		log.Error().Err(err).Str("username", username).Msg("Database error on login")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	// 2. Check if the provided password matches the stored hash
 	if !utils.CheckPasswordHash(payload.Password, user.PasswordHash) {
+		security.RecordFailedAttempt(user.Username)
+		security.RecordFailedAttempt(ip)
+		security.LogEvent(c, security.LoginFailure, user.ID, "Invalid password")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
-	// 3. Check if 2FA is enabled
 	if user.TwoFactorEnabled {
-		// Generate a temporary token that proves the password was correct.
 		twoFactorToken, err := auth.Generate2FAToken(user.ID, user.Username)
 		if err != nil {
-			log.Printf("2FA token generation error for user %s: %v", payload.Username, err)
+			log.Error().Err(err).Str("username", username).Msg("2FA token generation error")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not initiate 2FA process"})
 			return
 		}
@@ -74,10 +88,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 4. If 2FA is not enabled, generate standard tokens
-	accessToken, refreshToken, err := auth.GenerateTokens(user.ID, user.Username)
+	security.ResetAttempts(user.Username)
+	security.ResetAttempts(ip)
+	security.LogEvent(c, security.LoginSuccess, user.ID, "Login successful, no 2FA")
+
+	accessToken, refreshToken, err := auth.GenerateTokens(*user)
 	if err != nil {
-		log.Printf("Token generation error for user %s: %v", payload.Username, err)
+		log.Error().Err(err).Str("username", username).Msg("Token generation error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate authentication tokens"})
 		return
 	}
@@ -97,32 +114,50 @@ func Login2FA(c *gin.Context) {
 		return
 	}
 
-	// 1. Validate the temporary 2FA token
+	ip := c.ClientIP()
+
 	claims, err := auth.Validate2FAToken(payload.TwoFactorToken)
 	if err != nil {
+		security.LogEvent(c, security.TwoFactorFailure, 0, "Invalid 2FA token")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired 2FA token"})
 		return
 	}
 
-	// 2. Fetch the user's 2FA secret from the database
+	username := claims.Username
+	userID := claims.UserID
+
+	if security.IsLockedOut(username) || security.IsLockedOut(ip) {
+		details := fmt.Sprintf("Attempted 2FA for locked out user '%s'", username)
+		security.LogEvent(c, security.TwoFactorFailure, userID, details)
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many failed login attempts. Please try again later."})
+		return
+	}
+
+	user := &db.User{}
 	var twoFactorSecret sql.NullString
-	err = db.DB.QueryRow("SELECT two_factor_secret FROM users WHERE id = ?", claims.UserID).Scan(&twoFactorSecret)
+	err = db.DB.QueryRow("SELECT id, username, role, two_factor_secret FROM users WHERE id = ?", userID).Scan(&user.ID, &user.Username, &user.Role, &twoFactorSecret)
 	if err != nil || !twoFactorSecret.Valid {
-		log.Printf("Could not retrieve 2FA secret for user ID %d: %v", claims.UserID, err)
+		log.Error().Err(err).Int64("user_id", userID).Msg("Could not retrieve 2FA secret")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify 2FA code"})
 		return
 	}
 
-	// 3. Validate the provided TOTP code
 	if !twofactor.ValidateCode(twoFactorSecret.String, payload.Code) {
+		security.RecordFailedAttempt(username)
+		security.RecordFailedAttempt(ip)
+		security.LogEvent(c, security.TwoFactorFailure, userID, "Invalid 2FA code")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid 2FA code"})
 		return
 	}
 
-	// 4. If the code is valid, generate the final access and refresh tokens
-	accessToken, refreshToken, err := auth.GenerateTokens(claims.UserID, claims.Username)
+	security.ResetAttempts(username)
+	security.ResetAttempts(ip)
+	security.LogEvent(c, security.TwoFactorSuccess, userID, "2FA verification successful")
+	security.LogEvent(c, security.LoginSuccess, userID, "Login successful with 2FA")
+
+	accessToken, refreshToken, err := auth.GenerateTokens(*user)
 	if err != nil {
-		log.Printf("Token generation error for user %s after 2FA: %v", claims.Username, err)
+		log.Error().Err(err).Str("username", username).Msg("Token generation error after 2FA")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate authentication tokens"})
 		return
 	}
@@ -142,43 +177,40 @@ func Refresh(c *gin.Context) {
 		return
 	}
 
-	// 1. Validate the provided refresh token
 	claims, err := auth.ValidateToken(payload.RefreshToken)
 	if err != nil {
+		security.LogEvent(c, security.TokenRefreshFailure, 0, "Invalid refresh token")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
-	// 2. Check if the refresh token has already been used (is blocklisted)
 	isBlocklisted, err := db.IsTokenBlocklisted(claims.ID)
 	if err != nil {
-		log.Printf("Error checking token blocklist for JTI %s: %v", claims.ID, err)
+		log.Error().Err(err).Str("jti", claims.ID).Msg("Error checking token blocklist")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify token status"})
 		return
 	}
 	if isBlocklisted {
-		// This could indicate a stolen token is being re-used.
+		security.LogEvent(c, security.TokenRefreshFailure, claims.UserID, "Attempted to use a blocklisted refresh token")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Refresh token has already been used"})
 		return
 	}
 
-	// 3. Invalidate the old refresh token by adding it to the blocklist.
-	expiresAt := claims.ExpiresAt.Time
-	if err := db.BlocklistToken(claims.ID, expiresAt); err != nil {
-		log.Printf("Error blocklisting token for JTI %s: %v", claims.ID, err)
+	if err := db.BlocklistToken(claims.ID, claims.ExpiresAt.Time); err != nil {
+		log.Error().Err(err).Str("jti", claims.ID).Msg("Error blocklisting token")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process refresh token"})
 		return
 	}
 
-	// 4. Issue a new pair of tokens
-	newAccessToken, newRefreshToken, err := auth.GenerateTokens(claims.UserID, claims.Username)
+	user := db.User{ID: claims.UserID, Username: claims.Username, Role: claims.Role}
+	newAccessToken, newRefreshToken, err := auth.GenerateTokens(user)
 	if err != nil {
-		log.Printf("Token generation error for user %s: %v", claims.Username, err)
+		log.Error().Err(err).Str("username", claims.Username).Msg("Token generation error on refresh")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new tokens"})
 		return
 	}
 
-	// 5. Return the new tokens
+	security.LogEvent(c, security.TokenRefreshSuccess, claims.UserID, "Token refreshed successfully")
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  newAccessToken,
 		"refresh_token": newRefreshToken,
@@ -187,27 +219,25 @@ func Refresh(c *gin.Context) {
 
 // Logout invalidates the user's current access token by adding it to the blocklist.
 func Logout(c *gin.Context) {
-	// The AuthMiddleware has already validated the token and placed its details in the context.
-	jtiVal, ok := c.Get(middleware.ContextTokenJTIKey)
+	jti, ok := c.Get(middleware.ContextTokenJTIKey)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JTI not found in context"})
 		return
 	}
-	jti := jtiVal.(string)
 
-	expiresAtVal, ok := c.Get(middleware.ContextTokenExpiresAtKey)
+	expiresAt, ok := c.Get(middleware.ContextTokenExpiresAtKey)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Expiration not found in context"})
 		return
 	}
-	expiresAt := expiresAtVal.(time.Time)
 
-	// Add the token to the blocklist.
-	if err := db.BlocklistToken(jti, expiresAt); err != nil {
-		log.Printf("Error blocklisting token for JTI %s: %v", jti, err)
+	if err := db.BlocklistToken(jti.(string), expiresAt.(time.Time)); err != nil {
+		log.Error().Err(err).Str("jti", jti.(string)).Msg("Error blocklisting token on logout")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process logout"})
 		return
 	}
 
+	userID, _ := c.Get(middleware.ContextUserIDKey)
+	security.LogEvent(c, security.LogoutSuccess, userID.(int64), "User logged out successfully")
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }

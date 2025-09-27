@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
@@ -16,8 +16,7 @@ func RateLimiterMiddleware(rateFormat string) gin.HandlerFunc {
 	// 1. Parse the rate format string (e.g., "10-M" for 10 requests per minute).
 	rate, err := limiter.NewRateFromFormatted(rateFormat)
 	if err != nil {
-		log.Fatalf("Failed to parse rate limit format: %v", err)
-		// This will cause the application to fail on startup if the format is invalid.
+		log.Fatal().Err(err).Msgf("Failed to parse rate limit format: %s", rateFormat)
 	}
 
 	// 2. Create a new in-memory store.
@@ -31,7 +30,7 @@ func RateLimiterMiddleware(rateFormat string) gin.HandlerFunc {
 		// Get the limiter context for the current request.
 		context, err := instance.Get(c.Request.Context(), c.ClientIP())
 		if err != nil {
-			log.Printf("Rate limiter error: %v", err)
+			log.Error().Err(err).Msg("Rate limiter error")
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
@@ -43,6 +42,7 @@ func RateLimiterMiddleware(rateFormat string) gin.HandlerFunc {
 
 		// Abort the request if the limit has been reached.
 		if context.Reached {
+			log.Warn().Str("client_ip", c.ClientIP()).Msg("Rate limit exceeded")
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
 			return
 		}
