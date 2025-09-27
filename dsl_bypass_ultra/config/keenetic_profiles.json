@@ -1,0 +1,21 @@
+{
+  "comment": "This file contains specific parameter profiles for different Keenetic models. GÖREV 2'de kullanılabilir.",
+  "profiles": {
+    "Keenetic_Extra_DSL_KN-2111": {
+      "name": "Keenetic Extra DSL (KN-2111)",
+      "firmware_prefix": "v3.",
+      "cli_commands": {
+        "set_snr": "interface Dsl0 snr-margin {value}",
+        "get_status": "show interface Dsl0"
+      }
+    },
+    "Keenetic_Hero_DSL_KN-2410": {
+      "name": "Keenetic Hero DSL (KN-2410)",
+      "firmware_prefix": "v3.",
+      "cli_commands": {
+        "set_snr": "interface Dsl0 snr-margin {value}",
+        "get_status": "show interface Dsl0"
+      }
+    }
+  }
+}

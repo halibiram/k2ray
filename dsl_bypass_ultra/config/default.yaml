@@ -1,0 +1,48 @@
+# ======================================================
+# Default Configuration for DSL Bypass Ultra System
+# ======================================================
+#
+# Bu dosya, sistemin varsayılan ayarlarını içerir.
+# Kendi ayarlarınız için bu dosyayı kopyalayıp
+# 'config.yaml' olarak kaydedin veya install script'inin
+# sizin için bir tane oluşturmasına izin verin.
+
+# Modem Connection Settings
+modem:
+  host: "192.168.1.1"       # Keenetic modem IP address
+  username: "admin"             # Modem admin username
+  password: "YOUR_PASSWORD"     # !! GÜVENLİK: Buraya şifrenizi girin !!
+  protocol: "http"              # 'http', 'ssh', or 'telnet'
+
+# Optimization Engine Settings
+optimization:
+  profile: "max_speed"          # 'max_speed', 'stable', 'custom'
+  target_snr_margin: 55.0       # Hedef SNR değeri (dB). Dikkatli kullanın.
+  # GÖREV 2'de buraya daha fazla kural eklenecek.
+  rules:
+    - name: "Enable Bitswap"
+      param: "bitswap"
+      value: "enabled"
+    - name: "Enable SRA"
+      param: "sra"
+      value: "enabled"
+
+# Real-time Monitoring Settings (GÖREV 3)
+monitoring:
+  enabled: true
+  interval: 5                   # Saniye cinsinden veri toplama aralığı
+  log_file: "logs/performance.log"
+
+# Security and Backup Settings (GÖREV 4)
+security:
+  auto_backup_on_change: true
+  backup_directory: "backups/"
+  safety_checks:
+    # Parametrelerin uygulanmadan önce içinde kalması gereken güvenli aralıklar
+    min_snr: 4.0
+    max_tx_power: 14.5
+
+# Web Dashboard Settings (GÖREV 3)
+web_dashboard:
+  host: "0.0.0.0"
+  port: 8080

@@ -1,0 +1,16 @@
+# Python Dependencies for DSL Bypass Ultra System
+
+# Used in core.modem_interface for HTTP communication
+requests
+
+# Used in utils.config_generator for handling YAML configs
+PyYAML
+
+# Used in web.dashboard for the real-time web UI
+Flask
+
+# Future AI/ML dependencies will be added here
+# e.g., tensorflow, scikit-learn
+
+# For running tests
+# pytest

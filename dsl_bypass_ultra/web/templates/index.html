@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Real-Time Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <header>
+        <h1>Keenetic DSLAM Bypass Ultra System</h1>
+        <h2>Real-Time Performance Dashboard</h2>
+    </header>
+
+    <main>
+        <div id="status-container">
+            <h3>Current DSL Status</h3>
+            <p><strong>Status:</strong> <span id="dsl-status">N/A</span></p>
+            <p><strong>Downstream Rate:</strong> <span id="dsl-rate-down">N/A</span> Mbps</p>
+            <p><strong>SNR Margin Down:</strong> <span id="dsl-snr-down">N/A</span> dB</p>
+            <p><strong>Attenuation Down:</strong> <span id="dsl-attenuation-down">N/A</span> dB</p>
+        </div>
+
+        <div id="actions-container">
+            <h3>Actions</h3>
+            <button id="run-bypass-btn">Run 'max_speed' Bypass</button>
+            <p id="action-status"></p>
+        </div>
+    </main>
+
+    <footer>
+        <p>Kapalı Lab Ortamı - Akademik Araştırma Projesi</p>
+    </footer>
+
+    <script>
+        // GÖREV 3: JavaScript aktive edildi.
+        console.log("Dashboard script activated. Fetching real-time data...");
+
+        function fetchStatus() {
+            fetch('/api/status')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Gelen veriyi konsola yazdırarak hata ayıklamayı kolaylaştır
+                    // console.log(data);
+
+                    document.getElementById('dsl-status').textContent = data.status || 'N/A';
+
+                    // Gelen değerlerin sayı olup olmadığını kontrol et
+                    const rate = parseFloat(data.data_rate_down);
+                    const snr = parseFloat(data.snr_margin_down);
+                    const att = parseFloat(data.attenuation_down);
+
+                    document.getElementById('dsl-rate-down').textContent = !isNaN(rate) ? (rate / 1000).toFixed(2) : '0.00';
+                    document.getElementById('dsl-snr-down').textContent = !isNaN(snr) ? snr.toFixed(2) : '0.00';
+                    document.getElementById('dsl-attenuation-down').textContent = !isNaN(att) ? att.toFixed(2) : '0.00';
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    document.getElementById('dsl-status').textContent = "Error";
+                });
+        }
+
+        function executeBypass() {
+            const statusEl = document.getElementById('action-status');
+            const buttonEl = document.getElementById('run-bypass-btn');
+
+            statusEl.textContent = 'Executing...';
+            statusEl.style.color = 'orange';
+            buttonEl.disabled = true;
+
+            fetch('/api/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ profile: 'max_speed' }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusEl.textContent = 'Bypass successful! New rate: ' + (data.data.data_rate_down / 1000).toFixed(2) + ' Mbps';
+                    statusEl.style.color = 'green';
+                    // Trigger a status fetch immediately to update the dashboard
+                    fetchStatus();
+                } else {
+                    statusEl.textContent = 'Error: ' + data.message;
+                    statusEl.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                console.error('Error executing bypass:', error);
+                statusEl.textContent = 'A network error occurred.';
+                statusEl.style.color = 'red';
+            })
+            .finally(() => {
+                buttonEl.disabled = false;
+            });
+        }
+
+        // Sayfa yüklenince ilk veriyi hemen al
+        document.addEventListener('DOMContentLoaded', (event) => {
+            fetchStatus();
+            document.getElementById('run-bypass-btn').addEventListener('click', executeBypass);
+        });
+
+        // Her 3 saniyede bir veriyi yenile
+        setInterval(fetchStatus, 3000);
+    </script>
+
+</body>
+</html>
