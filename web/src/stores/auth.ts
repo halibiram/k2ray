@@ -64,8 +64,9 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('refreshToken', data.refresh_token)
       sessionStorage.removeItem('twoFactorToken')
     } catch (e: any) {
-      error.value = e.response?.data?.error || 'Failed to verify 2FA code.'
-      throw new Error(error.value)
+      const errorMessage = e.response?.data?.error || 'Failed to verify 2FA code.'
+      error.value = errorMessage
+      throw new Error(errorMessage)
     } finally {
       loading.value = false
     }

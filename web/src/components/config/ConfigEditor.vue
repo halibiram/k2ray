@@ -234,15 +234,15 @@ const onProtocolChange = () => {
 }
 
 // Deep merge utility
-const deepMerge = (target, source) => {
+const deepMerge = (target: Record<string, any>, source: Record<string, any>) => {
   for (const key in source) {
     if (source[key] instanceof Object && key in target) {
-      Object.assign(source[key], deepMerge(target[key], source[key]))
+      Object.assign(source[key], deepMerge(target[key], source[key]));
     }
   }
-  Object.assign(target || {}, source)
-  return target
-}
+  // Merge the source into the target
+  return { ...target, ...source };
+};
 
 watch(() => props.config, (newConfig) => {
   if (newConfig) {

@@ -1,6 +1,6 @@
 [Unit]
 Description=K2Ray - A unified proxy service manager
-Documentation=https://github.com/your-repo/k2ray
+Documentation=https://github.com/k2ray/k2ray
 After=network.target
 
 [Service]
