@@ -1,6 +1,7 @@
 import os
 import yaml
 import json
+import threading
 from typing import Any, Dict
 from jsonschema import validate, ValidationError
 
@@ -8,8 +9,16 @@ class ConfigurationManager:
     def __init__(self, config_path: str = 'config', env: str = 'development'):
         self.config_path = config_path
         self.env = env
+        self._lock = threading.Lock()
         self.schema = self._load_schema()
         self.config = self._load_config()
+
+    def reload(self):
+        """Reloads the configuration from the files."""
+        with self._lock:
+            print("Configuration change detected. Reloading...")
+            self.config = self._load_config()
+            print("Configuration reloaded successfully.")
 
     def _load_schema(self) -> Dict[str, Any]:
         """Loads the configuration schema."""

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Değişiklik Geçmişi - {{ env }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Değişiklik Geçmişi ({{ env }})</h1>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mb-3">Ana Sayfaya Dön</a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Zaman Damgası</th>
+                    <th>Ortam</th>
+                    <th>Yedekleme Dosyası</th>
+                    <th>Eylemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td>{{ item.timestamp }}</td>
+                    <td>{{ item.env }}</td>
+                    <td>{{ item.backup_file }}</td>
+                    <td>
+                        <a href="{{ url_for('rollback', timestamp=item.timestamp) }}" class="btn btn-warning btn-sm" onclick="return confirm('Bu sürüme geri dönmek istediğinizden emin misiniz?')">Geri Dön</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
