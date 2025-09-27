@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Application Configuration Schema",
+  "type": "object",
+  "properties": {
+    "app": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "required": ["name", "version"]
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string" },
+        "port": { "type": "integer" },
+        "user": { "type": "string" },
+        "password": { "type": "string" },
+        "db_name": { "type": "string" }
+      },
+      "required": ["host", "port", "user", "password"]
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": { "type": "string", "enum": ["debug", "info", "warning", "error", "critical"] },
+        "file": { "type": "string" }
+      },
+      "required": ["level"]
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "hot_reload": { "type": "boolean" },
+        "encryption": { "type": "boolean" }
+      }
+    }
+  },
+  "required": ["app", "database", "logging"]
+}

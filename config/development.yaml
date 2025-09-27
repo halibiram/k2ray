@@ -1,0 +1,8 @@
+database:
+  host: "localhost"
+  user: "dev_user"
+  password: "dev_password"
+
+logging:
+  level: "debug"
+  file: "dev.log"
