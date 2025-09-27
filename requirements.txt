@@ -1,2 +1,3 @@
 httpx
 pysqlite3
+PyYAML==6.0.1
