@@ -42,7 +42,6 @@ func TestMain(m *testing.M) {
 	config.AppConfig.JWTSecret = "a-very-secure-test-secret"
 
 	db.InitDB()
-	db.RunMigrations()
 
 	createTestUser("user1", "password123")
 	createTestUser("user2", "password456")
@@ -147,7 +146,7 @@ func TestAuthEndpoints(t *testing.T) {
 
 func TestV2rayConfigCRUD(t *testing.T) {
 	accessToken, _ := loginAs(t, "user1", "password123")
-	var createdConfig db.V2rayConfig
+	var createdConfig db.Configuration
 
 	// 1. Create
 	configPayload := `{"name": "My Server", "protocol": "vmess", "config_data": {"v": "2", "add": "test.com", "port": 443, "id": "some-uuid-crud"}}`
@@ -172,7 +171,7 @@ func TestV2rayConfigCRUD(t *testing.T) {
 	listW := httptest.NewRecorder()
 	testRouter.ServeHTTP(listW, listReq)
 	assert.Equal(t, http.StatusOK, listW.Code)
-	var configs []db.V2rayConfig
+	var configs []db.Configuration
 	json.Unmarshal(listW.Body.Bytes(), &configs)
 	assert.NotEmpty(t, configs)
 
@@ -183,7 +182,7 @@ func TestV2rayConfigCRUD(t *testing.T) {
 	updateW := httptest.NewRecorder()
 	testRouter.ServeHTTP(updateW, updateReq)
 	assert.Equal(t, http.StatusOK, updateW.Code)
-	var updatedConfig db.V2rayConfig
+	var updatedConfig db.Configuration
 	json.Unmarshal(updateW.Body.Bytes(), &updatedConfig)
 	assert.Equal(t, "My Updated Server", updatedConfig.Name)
 
@@ -211,7 +210,7 @@ func TestV2rayAccessControl(t *testing.T) {
 	createW := httptest.NewRecorder()
 	testRouter.ServeHTTP(createW, createReq)
 	assert.Equal(t, http.StatusCreated, createW.Code, "ACL Create failed with body: %s", createW.Body.String())
-	var user1Config db.V2rayConfig
+	var user1Config db.Configuration
 	json.Unmarshal(createW.Body.Bytes(), &user1Config)
 
 	// User 2 logs in
@@ -356,7 +355,7 @@ func TestV2RayProcessEndpoints(t *testing.T) {
 	createW := httptest.NewRecorder()
 	testRouter.ServeHTTP(createW, createReq)
 	assert.Equal(t, http.StatusCreated, createW.Code, "Failed to create config for process test. Body: "+createW.Body.String())
-	var createdConfig db.V2rayConfig
+	var createdConfig db.Configuration
 	json.Unmarshal(createW.Body.Bytes(), &createdConfig)
 
 	// 3. Set it as active

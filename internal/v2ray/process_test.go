@@ -28,7 +28,6 @@ func TestMain(m *testing.M) {
 	config.AppConfig.DatabaseURL = dbPath
 
 	db.InitDB()
-	db.RunMigrations()
 
 	// Setup router for any potential handler calls if needed (good practice)
 	testRouter := gin.Default()
@@ -50,7 +49,7 @@ func createTestUserAndConfig(t *testing.T) (userID, configID int64) {
 
 	// Create Config
 	configData := `{"v": "2", "add": "test.com", "port": 443}`
-	res, err = db.DB.Exec(`INSERT INTO v2ray_configs (user_id, name, protocol, config_data) VALUES (?, ?, ?, ?)`, userID, "test-config", "vmess", configData)
+	res, err = db.DB.Exec(`INSERT INTO configurations (user_id, name, protocol, config_data) VALUES (?, ?, ?, ?)`, userID, "test-config", "vmess", configData)
 	assert.NoError(t, err)
 	configID, _ = res.LastInsertId()
 	return
@@ -70,7 +69,7 @@ func TestV2RayProcessManager(t *testing.T) {
 
 	// 3. Set an active config
 	_, configID := createTestUserAndConfig(t)
-	_, err = db.DB.Exec(`INSERT INTO system_settings (key, value) VALUES (?, ?)`, v2ray.ActiveConfigKey, configID)
+	_, err = db.DB.Exec(`INSERT INTO settings (key, value) VALUES (?, ?)`, v2ray.ActiveConfigKey, configID)
 	assert.NoError(t, err)
 
 	// 4. Start the service
