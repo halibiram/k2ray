@@ -6,8 +6,6 @@ import (
 )
 
 // User represents a user in the system.
-// The struct tags for JSON are not included yet as this model is currently
-// for database interaction only. API-specific models can be defined later if needed.
 type User struct {
 	ID                     int64
 	Username               string
@@ -17,8 +15,8 @@ type User struct {
 	TwoFactorRecoveryCodes sql.NullString
 }
 
-// V2rayConfig represents a V2Ray configuration stored in the database.
-type V2rayConfig struct {
+// Configuration represents a V2Ray configuration stored in the database.
+type Configuration struct {
 	ID          int64
 	UserID      int64
 	Name        string
@@ -26,4 +24,13 @@ type V2rayConfig struct {
 	ConfigData  string // Stored as a JSON string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+// Log represents a system or application log entry.
+type Log struct {
+	ID        int64
+	Level     string
+	Message   string
+	Source    sql.NullString
+	CreatedAt time.Time
 }

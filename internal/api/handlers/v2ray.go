@@ -179,7 +179,7 @@ func CreateConfig(c *gin.Context) {
 	userID := userIDVal.(int64)
 
 	// Insert into the database
-	insertSQL := `INSERT INTO v2ray_configs (user_id, name, protocol, config_data) VALUES (?, ?, ?, ?)`
+	insertSQL := `INSERT INTO configurations (user_id, name, protocol, config_data) VALUES (?, ?, ?, ?)`
 	stmt, err := db.DB.Prepare(insertSQL)
 	if err != nil {
 		log.Printf("Error preparing SQL for CreateConfig: %v", err)
@@ -204,7 +204,7 @@ func CreateConfig(c *gin.Context) {
 	}
 
 	// Return the newly created resource
-	newConfig := db.V2rayConfig{
+	newConfig := db.Configuration{
 		ID:         newID,
 		UserID:     userID,
 		Name:       payload.Name,
@@ -221,7 +221,7 @@ func CreateConfig(c *gin.Context) {
 func ListConfigs(c *gin.Context) {
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
-	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM v2ray_configs WHERE user_id = ?`
+	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE user_id = ?`
 	rows, err := db.DB.Query(querySQL, userID)
 	if err != nil {
 		log.Printf("Error querying configs for user %d: %v", userID, err)
@@ -230,9 +230,9 @@ func ListConfigs(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	configs := []db.V2rayConfig{}
+	configs := []db.Configuration{}
 	for rows.Next() {
-		var config db.V2rayConfig
+		var config db.Configuration
 		if err := rows.Scan(&config.ID, &config.UserID, &config.Name, &config.Protocol, &config.ConfigData, &config.CreatedAt, &config.UpdatedAt); err != nil {
 			log.Printf("Error scanning config row: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process configurations"})
@@ -249,8 +249,8 @@ func GetConfig(c *gin.Context) {
 	configID := c.Param("id")
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
-	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM v2ray_configs WHERE id = ? AND user_id = ?`
-	var config db.V2rayConfig
+	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE id = ? AND user_id = ?`
+	var config db.Configuration
 	err := db.DB.QueryRow(querySQL, configID, userID).Scan(&config.ID, &config.UserID, &config.Name, &config.Protocol, &config.ConfigData, &config.CreatedAt, &config.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -278,8 +278,8 @@ func UpdateConfig(c *gin.Context) {
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
 	// 1. Fetch the existing config to ensure it exists and the user owns it.
-	var existingConfig db.V2rayConfig
-	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM v2ray_configs WHERE id = ? AND user_id = ?`
+	var existingConfig db.Configuration
+	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE id = ? AND user_id = ?`
 	err := db.DB.QueryRow(querySQL, configID, userID).Scan(&existingConfig.ID, &existingConfig.UserID, &existingConfig.Name, &existingConfig.Protocol, &existingConfig.ConfigData, &existingConfig.CreatedAt, &existingConfig.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -315,7 +315,7 @@ func UpdateConfig(c *gin.Context) {
 	}
 
 	// 4. Save the updated record back to the database.
-	updateSQL := `UPDATE v2ray_configs SET name = ?, config_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`
+	updateSQL := `UPDATE configurations SET name = ?, config_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`
 	_, err = db.DB.Exec(updateSQL, existingConfig.Name, existingConfig.ConfigData, configID, userID)
 	if err != nil {
 		log.Printf("Error executing update for config %s: %v", configID, err)
@@ -332,7 +332,7 @@ func DeleteConfig(c *gin.Context) {
 	configID := c.Param("id")
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
-	deleteSQL := `DELETE FROM v2ray_configs WHERE id = ? AND user_id = ?`
+	deleteSQL := `DELETE FROM configurations WHERE id = ? AND user_id = ?`
 	res, err := db.DB.Exec(deleteSQL, configID, userID)
 	if err != nil {
 		log.Printf("Error deleting config %s: %v", configID, err)

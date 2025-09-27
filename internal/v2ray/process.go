@@ -40,7 +40,7 @@ func Start() error {
 
 	// 1. Get active config ID from DB
 	var configID int64
-	err := db.DB.QueryRow("SELECT value FROM system_settings WHERE key = ?", ActiveConfigKey).Scan(&configID)
+	err := db.DB.QueryRow("SELECT value FROM settings WHERE key = ?", ActiveConfigKey).Scan(&configID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return errors.New("no active V2Ray configuration is set")
@@ -50,7 +50,7 @@ func Start() error {
 
 	// 2. Get config data from DB
 	var configData string
-	err = db.DB.QueryRow("SELECT config_data FROM v2ray_configs WHERE id = ?", configID).Scan(&configData)
+	err = db.DB.QueryRow("SELECT config_data FROM configurations WHERE id = ?", configID).Scan(&configData)
 	if err != nil {
 		return fmt.Errorf("could not retrieve config data for ID %d: %w", configID, err)
 	}

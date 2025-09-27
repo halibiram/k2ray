@@ -18,7 +18,6 @@ func TestMain(m *testing.M) {
 	}
 
 	db.InitDB()
-	db.RunMigrations()
 
 	// Run the tests
 	code := m.Run()

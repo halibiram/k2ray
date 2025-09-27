@@ -36,13 +36,13 @@ func SetActiveConfig(c *gin.Context) {
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
 	var exists bool
-	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM v2ray_configs WHERE id = ? AND user_id = ?)", payload.ConfigID, userID).Scan(&exists)
+	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM configurations WHERE id = ? AND user_id = ?)", payload.ConfigID, userID).Scan(&exists)
 	if err != nil || !exists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found or access denied"})
 		return
 	}
 
-	upsertSQL := `INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;`
+	upsertSQL := `INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;`
 	_, err = db.DB.Exec(upsertSQL, ActiveConfigKey, payload.ConfigID)
 	if err != nil {
 		log.Printf("Error setting active config: %v", err)
@@ -56,7 +56,7 @@ func SetActiveConfig(c *gin.Context) {
 // GetActiveConfig retrieves the currently active V2Ray configuration ID.
 func GetActiveConfig(c *gin.Context) {
 	var configID int64
-	err := db.DB.QueryRow("SELECT value FROM system_settings WHERE key = ?", ActiveConfigKey).Scan(&configID)
+	err := db.DB.QueryRow("SELECT value FROM settings WHERE key = ?", ActiveConfigKey).Scan(&configID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No active configuration is set"})

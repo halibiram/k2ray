@@ -16,11 +16,6 @@ func main() {
 	// Initialize database connection
 	db.InitDB()
 
-	// Run database migrations
-	db.RunMigrations()
-
-	// Seed database with initial data if necessary
-	db.SeedDatabase()
 
 	router := gin.Default()
 
