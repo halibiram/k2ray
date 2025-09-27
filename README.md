@@ -70,6 +70,75 @@ This section provides a brief overview of how to get the project running. For mo
 
 ---
 
+## 🧪 Testing
+
+This project is equipped with a comprehensive suite of tests and quality assurance tools to ensure code reliability and maintainability.
+
+### Backend (Go)
+
+All backend tests can be run from the root of the project using the `Makefile`.
+
+*   **Run all unit and integration tests:**
+    ```bash
+    make test
+    ```
+
+*   **Run tests with code coverage:**
+    This will generate a `coverage.out` file, which can be used by code analysis tools.
+    ```bash
+    make test-coverage
+    ```
+
+*   **Run the linter (`golangci-lint`):**
+    To generate a JSON report for SonarQube integration, use:
+    ```bash
+    make lint-report
+    ```
+
+### Frontend (Vue.js)
+
+All frontend tests and scripts should be run from within the `web/` directory.
+
+*   **Run component tests (`vitest`):**
+    ```bash
+    cd web
+    npm test
+    ```
+
+*   **Run component tests with code coverage:**
+    This generates reports in `web/tests/coverage/`, including `lcov.info` for SonarQube.
+    ```bash
+    cd web
+    npm run test:coverage
+    ```
+
+*   **Run the E2E Smoke Test:**
+    This test verifies that the frontend and backend servers can start and that the frontend serves the correct initial page.
+    *Note: This requires both the backend and frontend servers to be running.*
+    ```bash
+    cd web
+    npm run test:smoke
+    ```
+
+*   **Lint and Format Code:**
+    To check for linting errors:
+    ```bash
+    cd web
+    npm run lint
+    ```
+    To automatically format the code with Prettier:
+    ```bash
+    cd web
+    npm run format
+    ```
+    To generate a JSON report for SonarQube integration:
+    ```bash
+    cd web
+    npm run lint:report
+    ```
+
+---
+
 ## 🤝 Contribution Guidelines
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.

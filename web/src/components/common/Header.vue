@@ -29,8 +29,8 @@ const themeStore = useThemeStore()
 const router = useRouter()
 const { locale } = useI18n()
 
-const logout = () => {
-  authStore.logout()
+const logout = async () => {
+  await authStore.logout()
   router.push('/login')
 }
 </script>

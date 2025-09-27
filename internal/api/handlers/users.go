@@ -191,6 +191,31 @@ func DeleteUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetMe retrieves the currently authenticated user's details.
+func GetMe(c *gin.Context) {
+	userID, exists := c.Get(middleware.ContextUserIDKey)
+	if !exists {
+		// This should technically be caught by the AuthMiddleware, but we check as a safeguard.
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user db.User
+	err := db.DB.QueryRow("SELECT id, username, role FROM users WHERE id = ?", userID).Scan(&user.ID, &user.Username, &user.Role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// This case is unlikely if middleware is correct but handled for robustness.
+			c.JSON(http.StatusNotFound, gin.H{"error": "Authenticated user not found in database"})
+			return
+		}
+		log.Error().Err(err).Msgf("Failed to retrieve data for user ID: %v", userID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user information"})
+		return
+	}
+
+	c.JSON(http.StatusOK, sanitizeUser(user))
+}
+
 // ErrorResponse is a generic error response.
 type ErrorResponse struct {
 	Error string `json:"error"`

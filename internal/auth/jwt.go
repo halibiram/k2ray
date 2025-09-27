@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"k2ray/internal/config"
+	"k2ray/internal/db"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

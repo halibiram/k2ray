@@ -12,6 +12,17 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Vite Proxy Error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Sending Request to Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('Received Response from Target:', proxyRes.statusCode, req.url);
+          });
+        },
       },
     },
     hmr: {
@@ -21,6 +32,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './tests/coverage',
+    },
   },
   resolve: {
     alias: {

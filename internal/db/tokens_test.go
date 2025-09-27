@@ -55,5 +55,43 @@ func TestTokenBlocklisting(t *testing.T) {
 	assert.False(t, isBlocklisted)
 }
 
-// Note: A test for a cleanup function for expired tokens would go here
-// if such a function were implemented.
+func TestCleanupExpiredTokens(t *testing.T) {
+	// Clean up table before test
+	_, err := db.DB.Exec("DELETE FROM revoked_tokens")
+	assert.NoError(t, err)
+
+	// Add some tokens: 1 expired, 1 not
+	expiredJTI := "expired-jti"
+	validJTI := "valid-jti"
+	expiredTime := time.Now().Add(-1 * time.Hour) // Expired 1 hour ago
+	validTime := time.Now().Add(1 * time.Hour)   // Expires in 1 hour
+
+	err = db.BlocklistToken(expiredJTI, expiredTime)
+	assert.NoError(t, err)
+	err = db.BlocklistToken(validJTI, validTime)
+	assert.NoError(t, err)
+
+	// Verify both tokens are initially in the blocklist
+	isBlocklisted, err := db.IsTokenBlocklisted(expiredJTI)
+	assert.NoError(t, err)
+	assert.True(t, isBlocklisted, "Expired token should be blocklisted initially")
+
+	isBlocklisted, err = db.IsTokenBlocklisted(validJTI)
+	assert.NoError(t, err)
+	assert.True(t, isBlocklisted, "Valid token should be blocklisted initially")
+
+	// Run the cleanup function
+	rowsAffected, err := db.CleanupExpiredTokens()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), rowsAffected, "Should have cleaned up exactly one expired token")
+
+	// Verify the expired token is gone
+	isBlocklisted, err = db.IsTokenBlocklisted(expiredJTI)
+	assert.NoError(t, err)
+	assert.False(t, isBlocklisted, "Expired token should have been removed")
+
+	// Verify the valid token remains
+	isBlocklisted, err = db.IsTokenBlocklisted(validJTI)
+	assert.NoError(t, err)
+	assert.True(t, isBlocklisted, "Valid token should not have been removed")
+}

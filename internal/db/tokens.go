@@ -28,3 +28,14 @@ func IsTokenBlocklisted(jti string) (bool, error) {
 	// A row was found, meaning the token is blocklisted.
 	return true, nil
 }
+
+// CleanupExpiredTokens removes tokens from the blocklist that have expired.
+func CleanupExpiredTokens() (int64, error) {
+	deleteSQL := `DELETE FROM revoked_tokens WHERE expires_at < ?`
+	now := time.Now().Unix()
+	result, err := DB.Exec(deleteSQL, now)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
