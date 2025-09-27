@@ -1,28 +1,32 @@
 # k2ray
 
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/halibiram/k2ray)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue)](https://github.com/halibiram/k2ray/releases)
+
 k2ray is a modern, web-based management panel for the V2Ray proxy tool. It provides a user-friendly interface to manage your V2Ray configurations, monitor system status, and view traffic metrics, all from your web browser.
+
+---
+
+## 📸 Screenshots
+
+*(Add screenshots or GIFs of the application here to give users a visual preview.)*
 
 ![K2Ray Screenshot](https://place-hold.it/800x450/663399/ffffff?text=k2ray%20UI%20Screenshot)
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-*   **Configuration Management**: Easily create, edit, delete, and switch between V2Ray configurations.
-*   **QR Code Support**: Export and import configurations seamlessly using QR codes—scan with your camera or upload an image file.
-*   **System Monitoring**: View real-time system status, logs, and resource usage.
-*   **Traffic Metrics**: Monitor network traffic and connection statistics.
-*   **Multi-Language Support**: Switch between English and Turkish interfaces.
-*   **Light & Dark Themes**: Choose your preferred visual theme for a comfortable user experience.
-
----
-
-## 🚀 Technology Stack
-
-*   **Backend**: Go with the Gin web framework.
-*   **Frontend**: Vue.js 3 with Vite, Pinia for state management, and Tailwind CSS for styling.
-*   **Database**: SQLite for simple, file-based data storage.
-*   **API Documentation**: OpenAPI 3.0 specification.
+*   **Advanced Configuration Management**: Easily create, edit, delete, and switch between multiple V2Ray configurations.
+*   **QR Code Integration**: Seamlessly export and import configurations using QR codes. Scan with your mobile device's camera or upload an image file.
+*   **Real-Time System Monitoring**: Keep an eye on system status, including CPU, memory, and disk usage.
+*   **Live Log Viewer**: View and search V2Ray logs directly from the web interface.
+*   **Traffic Metrics & Analytics**: Monitor real-time network traffic, connection statistics, and data usage with interactive charts.
+*   **Multi-Language Support**: Fully localized interface with support for both English and Turkish.
+*   **Customizable Themes**: Switch between light and dark themes for a comfortable user experience.
+*   **Secure Access**: Protect your panel with JWT-based authentication and optional Two-Factor Authentication (2FA).
+*   **RESTful API**: A well-documented API for programmatic access and integration.
 
 ---
 
@@ -30,26 +34,28 @@ k2ray is a modern, web-based management panel for the V2Ray proxy tool. It provi
 
 This section provides a brief overview of how to get the project running. For more detailed instructions, please refer to the documentation in the `docs/` directory.
 
-### Prerequisites
+### ✅ System Requirements
 
-*   Go (version 1.21+)
-*   Node.js (version 18+) and npm
+*   **Go**: Version 1.24 or higher
+*   **Node.js**: Version 18 or higher (with npm)
+*   **V2Ray**: A running instance of V2Ray that k2ray can manage.
 
-### Installation
+### ⚙️ Installation
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/k2ray.git
+    git clone https://github.com/halibiram/k2ray.git
     cd k2ray
     ```
 
-2.  **Setup the Backend:**
+2.  **Setup the Backend (API Server):**
     ```bash
     # Run the development server
     go run ./cmd/k2ray
     ```
+    The API server will start, typically on port `8080`.
 
-3.  **Setup the Frontend:**
+3.  **Setup the Frontend (Web UI):**
     ```bash
     # Navigate to the web directory
     cd web
@@ -60,24 +66,30 @@ This section provides a brief overview of how to get the project running. For mo
     # Run the development server
     npm run dev
     ```
-
-After these steps, the backend API will be running (typically on port 8080) and the frontend will be accessible at `http://localhost:5173`.
-
----
-
-## 📚 Documentation
-
-This project includes comprehensive documentation to help you get started:
-
-*   **[Installation Guide](./docs/user/installation.md)**: Step-by-step instructions for setting up the project.
-*   **[Configuration Guide](./docs/user/configuration.md)**: How to configure the application.
-*   **[API Reference](./docs/api/openapi.yaml)**: Full OpenAPI specification for the backend API.
-*   **[Architecture Overview](./docs/developer/architecture.md)**: A look into the project's structure for developers.
-*   **[Troubleshooting](./docs/user/troubleshooting.md)**: Solutions for common issues.
-*   **[FAQ](./docs/user/faq.md)**: Frequently asked questions.
+    The frontend development server will be accessible at `http://localhost:5173`.
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contribution Guidelines
 
-Contributions are welcome! If you'd like to contribute, please fork the repository and create a pull request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 📜 Changelog
+
+For a detailed list of changes, please see the [CHANGELOG.md](./CHANGELOG.md) file.
