@@ -1,81 +1,46 @@
-# Installation
+# Installation Guide
 
-This guide will walk you through the process of setting up the k2ray project for development and production. The project consists of a Go backend and a Vue.js frontend.
+This guide provides instructions for installing and running the application.
 
-## Prerequisites
+## System Requirements
 
-Before you begin, ensure you have the following installed on your system:
+- **Operating System:**
+  - Windows
+  - macOS
+  - Linux
+- **Database:** The application uses a built-in SQLite database, so no external database setup is required for basic use.
 
-*   **Go**: Version 1.21 or higher. You can download it from [golang.org](https://golang.org/).
-*   **Node.js and npm**: Version 18 or higher. You can download it from [nodejs.org](https://nodejs.org/).
-*   **Git**: For cloning the repository.
+## Installation Methods
 
-## 1. Clone the Repository
+There are two primary ways to install the application: using a pre-compiled binary or building from source.
 
-First, clone the project repository from GitHub:
+### Method 1: Using a Pre-compiled Release (Recommended)
 
-```bash
-git clone <repository-url>
-cd k2ray
-```
+This is the easiest way to get started.
 
-## 2. Backend Setup (Go)
+1.  **Download the latest release:**
+    - Go to the [GitHub Releases page](https://github.com/your-username/k2ray/releases) for the project.
+    - Find the latest release and download the appropriate package for your operating system (e.g., `k2ray-windows-amd64.zip`, `k2ray-linux-amd64.tar.gz`).
 
-The backend is a Go application that serves the API.
+2.  **Extract the archive:**
+    - Unzip or extract the downloaded file into a folder of your choice.
 
-### Running in Development
+3.  **Run the application:**
+    - Open your terminal or command prompt.
+    - Navigate to the folder where you extracted the files.
+    - Run the executable:
+      - **On Windows:**
+        ```cmd
+        k2ray.exe
+        ```
+      - **On macOS/Linux:**
+        ```bash
+        ./k2ray
+        ```
 
-To run the backend server in development mode, navigate to the root of the project and use the `go run` command:
+4.  **Access the web interface:**
+    - Open your web browser and navigate to `http://localhost:8080` (or the port specified in the console output).
 
-```bash
-go run ./cmd/k2ray
-```
+### Method 2: Building from Source
 
-This will start the backend server, typically on a port defined in the application's configuration (e.g., `8080`).
-
-### Building for Production
-
-To create a production build, use the `go build` command. This will compile the application into a single executable file.
-
-```bash
-go build -o k2ray_server ./cmd/k2ray
-```
-
-After the build is complete, you can run the application with:
-
-```bash
-./k2ray_server
-```
-
-## 3. Frontend Setup (Vue.js)
-
-The frontend is a Vue.js single-page application located in the `web/` directory.
-
-### Install Dependencies
-
-Navigate to the `web` directory and install the required npm packages:
-
-```bash
-cd web
-npm install
-```
-
-### Running in Development
-
-To start the frontend development server with hot-reloading, run the following command:
-
-```bash
-npm run dev
-```
-
-This will typically make the frontend available at `http://localhost:5173`. The development server will automatically proxy API requests to the backend server.
-
-### Building for Production
-
-To build the frontend assets for production, run:
-
-```bash
-npm run build
-```
-
-This command will create a `dist/` directory inside `web/` containing the optimized static files (HTML, CSS, JavaScript). These files are ready to be served by a web server like Nginx or by the Go backend itself.
+If you prefer to build the application yourself, you will need to set up a development environment. Please refer to the [Development Setup Guide](./../developer/development-setup.md) for detailed instructions.

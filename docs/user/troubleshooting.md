@@ -1,52 +1,32 @@
-# Troubleshooting
+# Troubleshooting Guide
 
-This guide provides solutions to common problems you might encounter while setting up or running the k2ray application.
+This guide is intended to help you diagnose and resolve common issues you may encounter while using the application.
 
----
+## Application Not Starting
 
-### 1. Backend server fails to start with "address already in use"
+- **Symptom:** You run the executable (`k2ray` or `k2ray.exe`) and it closes immediately, or you cannot access the web UI.
+- **Solution:**
+  1.  **Check the logs:** Run the application from a terminal or command prompt. Any startup errors will be printed there. Look for messages like "Port already in use" or "Failed to open database".
+  2.  **Port conflict:** If you see an "address already in use" error, it means another application is using the configured port (default `8080`). Stop the other application or change the `K2RAY_PORT` in your `.env` file.
+  3.  **Permissions issue:** Ensure the application has permission to create and write to the database file (`k2ray.db` by default) in its directory. Try running the application as an administrator (on Windows) or with `sudo` (on Linux/macOS) to diagnose permission issues, but be cautious with this approach.
 
-*   **Problem**: When you run `go run ./cmd/k2ray`, you see an error message similar to `listen tcp :8080: bind: address already in use`.
-*   **Cause**: Another process is already running on the port the backend is trying to use (e.g., port 8080).
-*   **Solution**:
-    1.  **Identify and stop the other process**: Use a command like `lsof -i :8080` (on macOS/Linux) or `netstat -ano | findstr :8080` (on Windows) to find the Process ID (PID) of the application using the port. Then, stop that application or use `kill <PID>`.
-    2.  **Change the port**: If you cannot stop the other process, you can change the port the k2ray backend uses by setting the `PORT` environment variable (Note: This assumes the application is updated to respect the `PORT` variable. As of now, it's hardcoded, but this is a common practice).
+## Cannot Log In
 
----
+- **Symptom:** You are unable to log in, even with what you believe are the correct credentials.
+- **Solution:**
+  1.  **Default Credentials:** If this is your first time running the application, use the default credentials: `admin` / `admin`.
+  2.  **Caps Lock:** Ensure Caps Lock is not enabled on your keyboard.
+  3.  **Check logs:** The application logs might show errors related to database access or JWT secret configuration that could prevent logins.
+  4.  **Password Reset:** If you have forgotten your password and there is no password reset feature in the UI, you may need to manually edit the database. This is an advanced procedure and should be done with caution.
 
-### 2. Frontend shows a blank page or API errors in the console
+## V2Ray Core Issues
 
-*   **Problem**: The frontend loads as a blank white page, or the browser's developer console shows errors like `404 Not Found` for API requests or `CORS error`.
-*   **Cause**:
-    1.  The backend server is not running.
-    2.  The frontend is trying to connect to the wrong backend URL or port.
-    3.  A Cross-Origin Resource Sharing (CORS) issue is preventing the frontend from communicating with the backend.
-*   **Solution**:
-    1.  **Ensure the backend is running**: Make sure you have started the backend server by running `go run ./cmd/k2ray` in a separate terminal.
-    2.  **Verify API URL**: Check the frontend code (likely in `web/src/services/api.ts` or a similar file) to ensure the `baseURL` for Axios requests points to the correct backend address (e.g., `http://localhost:8080`).
-    3.  **Check CORS Configuration**: Ensure the Gin backend has the correct CORS middleware configuration to allow requests from the frontend's origin (e.g., `http://localhost:5173`).
+- **Symptom:** The dashboard shows that the V2Ray core is not running, or clients cannot connect.
+- **Solution:**
+  1.  **V2Ray Executable:** Ensure that the V2Ray core executable is correctly placed and configured if the application requires it to be provided manually.
+  2.  **Configuration Errors:** A misconfiguration in one of the V2Ray profiles can prevent the core process from starting. Check the application logs for specific error messages from V2Ray.
+  3.  **Firewall:** Make sure your server's firewall is not blocking the ports used by your V2Ray configurations.
 
----
+## Further Assistance
 
-### 3. `npm install` fails in the `web/` directory
-
-*   **Problem**: Running `npm install` inside the `web` directory results in errors.
-*   **Cause**: This can be due to an outdated version of Node.js/npm, network issues, or corrupted npm cache.
-*   **Solution**:
-    1.  **Update Node.js and npm**: Make sure you are using a supported version (v18 or higher).
-    2.  **Clear npm cache**: Run `npm cache clean --force` and then try `npm install` again.
-    3.  **Check network connection**: Ensure you have a stable internet connection, as npm needs to download packages from the registry.
-
----
-
-### 4. JWT authentication errors (401 Unauthorized)
-
-*   **Problem**: You are logged out unexpectedly, or API requests fail with a `401 Unauthorized` error.
-*   **Cause**:
-    1.  The JWT has expired.
-    2.  The `JWT_SECRET` used by the backend was changed, invalidating all existing tokens.
-    3.  The token is not being sent correctly in the `Authorization` header.
-*   **Solution**:
-    1.  **Log in again**: The simplest solution is to go back to the login page and re-authenticate to get a new token.
-    2.  **Check `JWT_SECRET`**: Ensure the `JWT_SECRET` in your `.env` file or environment variables is correct and has not been accidentally changed.
-    3.  **Use browser developer tools**: Check the "Network" tab in your browser's developer tools to inspect the headers of a failing request. Ensure the `Authorization` header is present and has the format `Bearer <your-token>`.
+If you are still experiencing issues after following this guide, please consider opening an issue on our [GitHub repository](https://github.com/your-username/k2ray/issues). Please include any relevant logs and a detailed description of the problem.
