@@ -1,4 +1,5 @@
 from core.modem_interface import ModemInterface
+from core.security_manager import SafetyManager
 
 class ParameterManipulator:
     """
@@ -6,8 +7,9 @@ class ParameterManipulator:
     This class uses a modem engine to apply the changes.
     """
 
-    def __init__(self, modem_engine: ModemInterface):
+    def __init__(self, modem_engine: ModemInterface, safety_manager: SafetyManager = None):
         self.modem = modem_engine
+        self.safety_manager = safety_manager or SafetyManager()
         self.validation_rules = {
             "snr": {"min": -5.0, "max": 40.0},
             "attenuation": {"min": 0.0, "max": 50.0},
@@ -45,6 +47,20 @@ class ParameterManipulator:
            not self._validate_parameter("attenuation", target_attenuation):
             return False
 
+        # --- Safety Manager Integration ---
+        proposed_changes = {"snr": target_snr, "attenuation": target_attenuation}
+        if not self.safety_manager.validate_parameter_changes(proposed_changes):
+            print("--- Simulation aborted due to safety validation failure. ---")
+            return False
+
+        risk_level = self.safety_manager.risk_assessment(proposed_changes)
+        if risk_level == "high":
+            print("--- Simulation aborted due to HIGH RISK. ---")
+            return False
+        elif risk_level == "medium":
+            print("WARNING: Simulation carries MEDIUM risk. Proceeding with caution.")
+        # --- End Safety Manager Integration ---
+
         try:
             await self.modem.manipulate_line_length(length_m)
             print("--- Short line simulation successful ---")
@@ -60,6 +76,20 @@ class ParameterManipulator:
         if not self._validate_parameter("snr", snr_db) or \
            not self._validate_parameter("attenuation", attenuation_db):
             return False
+
+        # --- Safety Manager Integration ---
+        proposed_changes = {"snr": snr_db, "attenuation": attenuation_db}
+        if not self.safety_manager.validate_parameter_changes(proposed_changes):
+            print("--- Operation aborted due to safety validation failure. ---")
+            return False
+
+        risk_level = self.safety_manager.risk_assessment(proposed_changes)
+        if risk_level == "high":
+            print("--- Operation aborted due to HIGH RISK. ---")
+            return False
+        elif risk_level == "medium":
+            print("WARNING: Operation carries MEDIUM risk. Proceeding with caution.")
+        # --- End Safety Manager Integration ---
 
         try:
             await self.modem.spoof_snr_values(snr_db)
