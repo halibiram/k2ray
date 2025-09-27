@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-800">System Status</h1>
-    <p class="mt-2 text-gray-600">Detailed system information and logs.</p>
+    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">System Status</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-300">Detailed system information and logs.</p>
 
     <div class="mt-8">
       <SystemInfo :info="systemStore.systemInfo" />

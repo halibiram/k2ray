@@ -1,36 +1,37 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-import LoginView from '../views/Login.vue'
-import Verify2FAView from '../views/Verify2FA.vue'
-import Setup2FAView from '../views/Setup2FA.vue'
-import DashboardView from '../views/Dashboard.vue'
-import ConfigManagerView from '../views/ConfigManager.vue'
-import SystemStatusView from '../views/SystemStatus.vue'
-import MonitoringView from '../views/Monitoring.vue'
 import Layout from '../components/common/Layout.vue'
 
 const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginView,
+    component: () => import('../views/Login.vue'),
   },
   {
     path: '/verify-2fa',
     name: 'Verify2FA',
-    component: Verify2FAView,
+    component: () => import('../views/Verify2FA.vue'),
   },
   {
     path: '/',
     component: Layout,
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'Dashboard', component: DashboardView },
-      { path: '/configurations', name: 'Configurations', component: ConfigManagerView },
-      { path: '/system-status', name: 'SystemStatus', component: SystemStatusView },
-      { path: '/monitoring', name: 'Monitoring', component: MonitoringView },
-      { path: '/settings/2fa', name: 'Setup2FA', component: Setup2FAView },
+      { path: '', name: 'Dashboard', component: () => import('../views/Dashboard.vue') },
+      {
+        path: '/configurations',
+        name: 'Configurations',
+        component: () => import('../views/ConfigManager.vue'),
+      },
+      {
+        path: '/system-status',
+        name: 'SystemStatus',
+        component: () => import('../views/SystemStatus.vue'),
+      },
+      { path: '/monitoring', name: 'Monitoring', component: () => import('../views/Monitoring.vue') },
+      { path: '/settings/2fa', name: 'Setup2FA', component: () => import('../views/Setup2FA.vue') },
     ],
   },
   // Catch-all to redirect to the main page

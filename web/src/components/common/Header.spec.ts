@@ -49,10 +49,10 @@ describe('Header.vue', () => {
   })
 
   it('displays the correct theme toggle button text', async () => {
-    const themeStore = useThemeStore()
     const wrapper = mount(Header, {
       global: { plugins: [i18n] },
     })
+    const themeStore = useThemeStore()
 
     expect(wrapper.find('button.bg-gray-200').text()).toBe('Dark')
 
@@ -76,7 +76,9 @@ describe('Header.vue', () => {
     expect(logoutButton).toBeDefined()
 
     // Trigger the click
-    await logoutButton.trigger('click')
+    if (logoutButton) {
+      await logoutButton.trigger('click')
+    }
 
     // Wait for Vue to process the update queue after the promise resolves
     await wrapper.vm.$nextTick()

@@ -1,14 +1,17 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
-    <p class="mt-2 text-gray-600">System status overview</p>
+    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-300">System status overview</p>
 
     <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <StatusCard title="K2Ray API Status" :status="systemStore.apiStatus" />
       <StatusCard title="V2Ray Service Status" :status="systemStore.v2rayStatus?.status" />
     </div>
 
-    <div v-if="systemStore.error" class="mt-4 p-4 text-red-700 bg-red-100 border border-red-400 rounded-md">
+    <div
+      v-if="systemStore.error"
+      class="mt-4 p-4 text-red-700 bg-red-100 border border-red-400 rounded-md dark:bg-red-900 dark:text-red-200 dark:border-red-700"
+    >
       <p>An error occurred: {{ systemStore.error }}</p>
     </div>
   </div>

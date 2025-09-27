@@ -1,5 +1,5 @@
 <template>
-  <v-chart class="chart" :option="chartOption" autoresize />
+  <v-chart class="chart" :option="chartOption" :theme="themeStore.theme" autoresize />
 </template>
 
 <script setup lang="ts">
@@ -10,11 +10,14 @@ import { SankeyChart } from 'echarts/charts';
 import { TitleComponent, TooltipComponent } from 'echarts/components';
 import VChart from 'vue-echarts';
 import { useMetricsStore } from '../../stores/metrics';
+import { useThemeStore } from '../../stores/theme';
+import 'echarts/theme/dark.js';
 
 // Initialize ECharts components
 use([CanvasRenderer, SankeyChart, TitleComponent, TooltipComponent]);
 
 const metricsStore = useMetricsStore();
+const themeStore = useThemeStore();
 
 const chartOption = computed(() => ({
   tooltip: {
@@ -33,6 +36,9 @@ const chartOption = computed(() => ({
       lineStyle: {
         color: 'source',
         curveness: 0.5,
+      },
+      label: {
+        color: themeStore.theme === 'dark' ? '#fff' : '#333',
       },
     },
   ],

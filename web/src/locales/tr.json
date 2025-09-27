@@ -4,7 +4,11 @@
     "description": "V2Ray yapılandırmalarınızı yönetin.",
     "createNew": "Yeni Yapılandırma Oluştur",
     "loading": "Yapılandırmalar yükleniyor...",
-    "error": "Hata: {error}"
+    "error": "Hata: {error}",
+    "confirmDelete": {
+      "title": "Silmeyi Onayla",
+      "message": "Bu yapılandırmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+    }
   },
   "configList": {
     "name": "İsim",
@@ -28,7 +32,8 @@
   "common": {
     "save": "Kaydet",
     "cancel": "İptal",
-    "logout": "Çıkış Yap"
+    "logout": "Çıkış Yap",
+    "delete": "Sil"
   },
   "header": {
     "title": "k2ray"
