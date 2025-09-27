@@ -93,9 +93,9 @@ const openEditModal = (config: V2rayConfig) => {
 }
 
 const handleShowQr = (config: V2rayConfig) => {
-  // Assuming the QR code should contain the main config object, stringified.
-  // This can be adjusted to a specific format like VMess URI if needed.
-  qrCodeValue.value = JSON.stringify(config.data)
+  // The QR code value should be the raw config data string.
+  // This can be adjusted later to a specific format like VMess URI.
+  qrCodeValue.value = config.config_data;
   isQrModalOpen.value = true
 }
 
@@ -119,16 +119,20 @@ const handleSave = async (payload: ConfigPayload) => {
 }
 
 const handleImport = (configData: any) => {
-  // Create a new config object from the imported data
-  const newConfig = {
-    id: 0, // No ID yet, as it's a new config
-    name: 'New Imported Config', // Default name
-    data: configData,
-    // Add other fields from V2rayConfig with default values if needed
-  }
+  // Create a new config object from the imported data.
+  // We provide a full V2rayConfig structure to satisfy the type.
+  // The user will edit details in the modal.
+  const newConfig: V2rayConfig = {
+    id: 0, // Temporary ID for a new item
+    user_id: 0, // Assuming a default/placeholder
+    name: 'New Imported Config',
+    protocol: 'vmess', // Default protocol, user can change in editor
+    config_data: JSON.stringify(configData),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
-  // Set this as the editing config and open the modal
-  editingConfig.value = newConfig as V2rayConfig
-  isModalOpen.value = true
+  editingConfig.value = newConfig;
+  isModalOpen.value = true;
 }
 </script>

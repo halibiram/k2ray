@@ -1,30 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, VueWrapper } from '@vue/test-utils'
 import ConfigEditor from './ConfigEditor.vue'
-import { v4 as uuidv4 } from 'uuid'
-
-// A helper to create a complete default structure for merging
-const createDefaultConfigData = (protocol) => {
-    const wsSettings = { path: '/', headers: {} };
-    const grpcSettings = { serviceName: '' };
-    const transport = { net: 'tcp', tls: 'none', wsSettings, grpcSettings };
-
-    switch (protocol) {
-        case 'vmess':
-            return { v: '2', add: '', port: 443, id: uuidv4(), aid: 0, type: 'none', host: '', path: '', ...transport };
-        case 'vless':
-            return { id: uuidv4(), add: '', port: 443, encryption: 'none', flow: '', ...transport };
-        case 'trojan':
-            return { server: '', server_port: 443, password: '', sni: '', ...transport };
-        case 'shadowsocks':
-            return { server: '', server_port: 8388, password: '', method: 'aes-256-gcm' };
-        default:
-            return {};
-    }
-};
 
 describe('ConfigEditor.vue', () => {
-  let wrapper;
+  let wrapper: VueWrapper<any>;
 
   beforeEach(() => {
     wrapper = mount(ConfigEditor, {
@@ -125,7 +104,7 @@ describe('ConfigEditor.vue', () => {
     await wrapper.setProps({ config: existingConfig });
 
     expect(wrapper.find('h3').text()).toContain('Edit Configuration');
-    expect(wrapper.find('#name').element.value).toBe('My Old WS Server');
+    expect((wrapper.find('#name').element as HTMLInputElement).value).toBe('My Old WS Server');
 
     // Check that basic fields are populated
     const vm = wrapper.vm as any;
@@ -134,7 +113,7 @@ describe('ConfigEditor.vue', () => {
 
     // Check that transport settings are populated
     expect(vm.form.config_data.net).toBe('ws');
-    expect(wrapper.find('#ws-path').element.value).toBe('/my-path');
+    expect((wrapper.find('#ws-path').element as HTMLInputElement).value).toBe('/my-path');
 
     // Check that a field missing from the old config (grpcSettings) exists in the model
     // This confirms the deep merge worked
@@ -146,7 +125,7 @@ describe('ConfigEditor.vue', () => {
     await wrapper.find('#name').setValue('New Test Server');
     await wrapper.find('#protocol').setValue('trojan');
     await wrapper.find('#trojan-server').setValue('my-trojan.com');
-    await wrapper.find('#trojan-port').setValue(8443);
+    await wrapper.find('#trojan-port').setValue('8443');
     await wrapper.find('#trojan-password').setValue('secret');
     await wrapper.find('#transport-net').setValue('grpc');
     await wrapper.find('#grpc-service-name').setValue('my-grpc-service');
@@ -155,7 +134,7 @@ describe('ConfigEditor.vue', () => {
 
     const emitted = wrapper.emitted('save');
     expect(emitted).toHaveLength(1);
-    const payload = emitted[0][0];
+    const payload = (emitted as any)[0][0];
 
     expect(payload.name).toBe('New Test Server');
     expect(payload.protocol).toBe('trojan');
