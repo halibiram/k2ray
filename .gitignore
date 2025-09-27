@@ -1,17 +1,2 @@
-# Go build artifacts
-k2ray-server
-*.exe
-*.out
-
-# Log files
-*.log
-
-# Frontend dependencies
-web/node_modules
-web/dist
-
-# Test artifacts
-web/test-results/
-web/playwright-report/
-web/tests/e2e/*.png
-web/tests/e2e/*.spec.ts-snapshots/
+# Ignore environment files in the configs directory
+configs/*.env

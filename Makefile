@@ -29,3 +29,12 @@ clean:
 	@echo "Cleaning up build artifacts..."
 	rm -f k2ray-server
 	rm -f coverage.out
+
+# ==============================================================================
+# 📖 DOCUMENTATION
+# ==============================================================================
+
+swag:
+	@echo ">> Generating Swagger/OpenAPI documentation..."
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@$(go env GOPATH)/bin/swag init -g cmd/k2ray/main.go

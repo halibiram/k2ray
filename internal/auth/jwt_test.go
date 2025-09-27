@@ -3,6 +3,7 @@ package auth_test
 import (
 	"k2ray/internal/auth"
 	"k2ray/internal/config"
+	"k2ray/internal/db"
 	"testing"
 	"time"
 
@@ -19,11 +20,14 @@ func setup() {
 func TestTokenGenerationAndValidation(t *testing.T) {
 	setup()
 
-	userID := int64(123)
-	username := "testuser"
+	user := db.User{
+		ID:       123,
+		Username: "testuser",
+		Role:     db.RoleUser,
+	}
 
 	// 1. Generate tokens
-	accessToken, refreshToken, err := auth.GenerateTokens(userID, username)
+	accessToken, refreshToken, err := auth.GenerateTokens(user)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, accessToken)
 	assert.NotEmpty(t, refreshToken)
@@ -32,8 +36,8 @@ func TestTokenGenerationAndValidation(t *testing.T) {
 	accessClaims, err := auth.ValidateToken(accessToken)
 	assert.NoError(t, err)
 	assert.NotNil(t, accessClaims)
-	assert.Equal(t, userID, accessClaims.UserID)
-	assert.Equal(t, username, accessClaims.Username)
+	assert.Equal(t, user.ID, accessClaims.UserID)
+	assert.Equal(t, user.Username, accessClaims.Username)
 	assert.NotEmpty(t, accessClaims.ID) // JTI should exist
 	assert.Equal(t, "k2ray", accessClaims.Issuer)
 	// Check that expiration is roughly 15 minutes from now
@@ -43,7 +47,7 @@ func TestTokenGenerationAndValidation(t *testing.T) {
 	refreshClaims, err := auth.ValidateToken(refreshToken)
 	assert.NoError(t, err)
 	assert.NotNil(t, refreshClaims)
-	assert.Equal(t, userID, refreshClaims.UserID)
+	assert.Equal(t, user.ID, refreshClaims.UserID)
 	// Check that expiration is roughly 7 days from now
 	assert.WithinDuration(t, time.Now().Add(7*24*time.Hour), refreshClaims.ExpiresAt.Time, 5*time.Second)
 }
@@ -58,7 +62,7 @@ func TestValidateToken_InvalidToken(t *testing.T) {
 	// Test with a token signed with a different key
 	otherSecretConfig := &config.Config{JWTSecret: "other-secret"}
 	config.AppConfig = otherSecretConfig
-	accessToken, _, _ := auth.GenerateTokens(1, "user")
+	accessToken, _, _ := auth.GenerateTokens(db.User{ID: 1, Username: "user", Role: db.RoleUser})
 
 	// Switch back to the original secret to validate
 	setup()
