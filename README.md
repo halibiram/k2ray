@@ -70,6 +70,12 @@ This section provides a brief overview of how to get the project running. For mo
 
 ---
 
+## 📈 Monitoring
+
+For a comprehensive guide on setting up logging, metrics, and alerting, please see the [Monitoring Documentation](./docs/monitoring.md).
+
+---
+
 ## 🧪 Testing
 
 This project is equipped with a comprehensive suite of tests and quality assurance tools to ensure code reliability and maintainability.

@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/db"
+	"k2ray/internal/redis"
 	"k2ray/internal/system"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -87,4 +90,38 @@ func GetSystemLogs(c *gin.Context) {
 		return
 	}
 	c.String(http.StatusOK, logs)
+}
+
+// HealthCheck is a handler for the /health endpoint.
+// It checks the status of critical services like the database and Redis.
+func HealthCheck(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// Check Database Connection
+	dbStatus := "up"
+	if err := db.DB.PingContext(ctx); err != nil {
+		dbStatus = "down"
+		log.Error().Err(err).Msg("Health check failed: database connection error")
+	}
+
+	// Check Redis Connection
+	redisStatus := "up"
+	if _, err := redis.RedisClient.Ping(ctx).Result(); err != nil {
+		redisStatus = "down"
+		log.Error().Err(err).Msg("Health check failed: redis connection error")
+	}
+
+	// Determine overall health status
+	status := http.StatusOK
+	if dbStatus == "down" || redisStatus == "down" {
+		status = http.StatusServiceUnavailable
+	}
+
+	c.JSON(status, gin.H{
+		"status":      "ok",
+		"database":    dbStatus,
+		"redis":       redisStatus,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+	})
 }

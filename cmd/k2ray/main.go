@@ -2,12 +2,16 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"k2ray/internal/api"
+	"k2ray/internal/api/middleware"
 	"k2ray/internal/config"
 	"k2ray/internal/db"
 	"k2ray/internal/logger"
+	"k2ray/internal/metrics"
 	"k2ray/internal/redis"
+	"runtime"
 )
 
 // @title K2Ray API
@@ -29,6 +33,13 @@ import (
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
+
+// Variables for version information, can be set at build time
+var (
+	AppVersion = "1.0.0" // Example version
+	GoVersion  = runtime.Version()
+)
+
 func main() {
 	// Initialize the structured logger as the first step.
 	logger.InitLogger()
@@ -37,13 +48,30 @@ func main() {
 	config.LoadConfig("") // Load from default path "configs/system.env"
 	log.Info().Msg("Configuration loaded successfully.")
 
+	// Initialize metrics
+	metrics.InitMetrics(AppVersion, GoVersion)
+	log.Info().Msg("Metrics initialized.")
+
 	// Initialize database connection
 	db.InitDB()
 
 	// Initialize Redis connection
 	redis.InitRedis()
 
-	router := gin.Default()
+	// Create a new Gin router without the default middleware
+	router := gin.New()
+
+	// Add our custom structured logger middleware
+	router.Use(logger.GinLogger())
+
+	// Add Prometheus middleware to collect metrics
+	router.Use(middleware.PrometheusMiddleware())
+
+	// Add the default recovery middleware (recovers from panics)
+	router.Use(gin.Recovery())
+
+	// Add the /metrics endpoint for Prometheus scraping
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Setup routes from the internal/api package
 	api.SetupRouter(router, true) // Enable rate limiting in production
