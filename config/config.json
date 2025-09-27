@@ -1,0 +1,13 @@
+{
+    "database": {
+        "path": "data/framework.db"
+    },
+    "logging": {
+        "log_file": "logs/framework.log",
+        "level": "INFO"
+    },
+    "modem": {
+        "default_username": "admin",
+        "default_password": ""
+    }
+}
