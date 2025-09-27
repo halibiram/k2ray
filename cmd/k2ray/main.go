@@ -2,20 +2,23 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"k2ray/internal/api"
 	"k2ray/internal/config"
 	"k2ray/internal/db"
-	"log"
+	"k2ray/internal/logger"
 )
 
 func main() {
+	// Initialize the structured logger as the first step.
+	logger.InitLogger()
+
 	// Load application configuration
 	config.LoadConfig("") // Load from default path "configs/system.env"
-	log.Println("Configuration loaded successfully.")
+	log.Info().Msg("Configuration loaded successfully.")
 
 	// Initialize database connection
 	db.InitDB()
-
 
 	router := gin.Default()
 
@@ -24,8 +27,8 @@ func main() {
 
 	// In a real application, the port should be configurable.
 	// For now, we'll hardcode it to 8080.
-	log.Println("Starting server on :8080")
+	log.Info().Msg("Starting server on :8080")
 	if err := router.Run(":8080"); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		log.Fatal().Err(err).Msg("Failed to start server")
 	}
 }

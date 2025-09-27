@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"k2ray/internal/config"
-	"log"
 	"sync"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattn/go-sqlite3" // The SQLite driver
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -33,27 +33,27 @@ func InitDB() {
 
 		dbURL := config.AppConfig.DatabaseURL
 		if dbURL == "" {
-			log.Fatal("DATABASE_URL is not set in the configuration.")
+			log.Fatal().Msg("DATABASE_URL is not set in the configuration.")
 		}
 
 		// Open the database connection.
 		DB, err = sql.Open("sqlite3", dbURL)
 		if err != nil {
-			log.Fatalf("Fatal error opening database connection: %v", err)
+			log.Fatal().Err(err).Msg("Fatal error opening database connection")
 		}
 
 		// Ping the database to verify the connection is alive.
 		if err = DB.Ping(); err != nil {
-			log.Fatalf("Fatal error connecting to database: %v", err)
+			log.Fatal().Err(err).Msg("Fatal error connecting to database")
 		}
-		log.Println("Database connection established successfully.")
+		log.Info().Msg("Database connection established successfully.")
 
 		// Run database migrations from the embedded filesystem.
-		log.Println("Running database migrations...")
+		log.Info().Msg("Running database migrations...")
 		if err := runMigrations(DB); err != nil {
-			log.Fatalf("Fatal error running database migrations: %v", err)
+			log.Fatal().Err(err).Msg("Fatal error running database migrations")
 		}
-		log.Println("Database migrations completed successfully.")
+		log.Info().Msg("Database migrations completed successfully.")
 	})
 }
 

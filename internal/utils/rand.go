@@ -2,8 +2,9 @@ package utils
 
 import (
 	"crypto/rand"
-	"log"
 	"math/big"
+
+	"github.com/rs/zerolog/log"
 )
 
 // SecureIntn returns a cryptographically secure random integer in [0, n).
@@ -17,7 +18,7 @@ func SecureIntn(n int64) int64 {
 	if err != nil {
 		// In a production system, you might want to handle this more gracefully,
 		// but for a command-line tool or server startup, failing fast is okay.
-		log.Fatalf("Failed to generate secure random number: %v", err)
+		log.Fatal().Err(err).Msg("Failed to generate secure random number")
 	}
 	return result.Int64()
 }
@@ -31,7 +32,7 @@ func SecureUint64n(n uint64) uint64 {
 	max := new(big.Int).SetUint64(n)
 	result, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		log.Fatalf("Failed to generate secure random number: %v", err)
+		log.Fatal().Err(err).Msg("Failed to generate secure random number")
 	}
 	return result.Uint64()
 }
@@ -44,7 +45,7 @@ func SecureFloat64() float64 {
 	max := big.NewInt(maxMantissa)
 	n, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		log.Fatalf("Failed to generate secure random number for float: %v", err)
+		log.Fatal().Err(err).Msg("Failed to generate secure random number for float")
 	}
 	return float64(n.Int64()) / float64(maxMantissa)
 }

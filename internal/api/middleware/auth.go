@@ -3,11 +3,11 @@ package middleware
 import (
 	"k2ray/internal/auth"
 	"k2ray/internal/db"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -46,7 +46,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Check if the token has been revoked (is in the blocklist).
 		isBlocklisted, err := db.IsTokenBlocklisted(claims.ID)
 		if err != nil {
-			log.Printf("Error checking token blocklist for JTI %s: %v", claims.ID, err)
+			log.Error().Err(err).Str("jti", claims.ID).Msg("Error checking token blocklist")
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Could not verify token status"})
 			return
 		}

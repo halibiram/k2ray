@@ -1,11 +1,11 @@
 package config
 
 import (
-	"log"
 	"os"
 	"sync"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 )
 
 // Config holds the application configuration.
@@ -40,7 +40,7 @@ func LoadConfig(path string) {
 		// godotenv.Load will not override existing environment variables.
 		err := godotenv.Load(path)
 		if err != nil {
-			log.Printf("Warning: could not load %s file: %v. Falling back to environment variables.", path, err)
+			log.Warn().Err(err).Str("path", path).Msg("Could not load .env file, falling back to environment variables")
 		}
 
 		AppConfig = &Config{

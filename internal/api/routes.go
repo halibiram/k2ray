@@ -8,6 +8,10 @@ import (
 
 // SetupRouter configures the routes for the application.
 func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
+	// Apply global middleware
+	router.Use(middleware.HTTPSRedirectMiddleware())
+	router.Use(middleware.CORSMiddleware())
+
 	// All API routes will be prefixed with /api/v1
 	apiV1 := router.Group("/api/v1")
 	apiV1.Use(middleware.SecurityHeadersMiddleware()) // Apply security headers to all /api/v1 routes
@@ -39,6 +43,17 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 			userRoutes := protected.Group("/users")
 			{
 				userRoutes.GET("/me", handlers.GetMe)
+
+				// User management routes (for admins)
+				adminUserRoutes := userRoutes.Group("/")
+				adminUserRoutes.Use(middleware.AdminRequired())
+				{
+					adminUserRoutes.POST("", handlers.CreateUser)
+					adminUserRoutes.GET("", handlers.ListUsers)
+					adminUserRoutes.GET("/:id", handlers.GetUser)
+					adminUserRoutes.PUT("/:id", handlers.UpdateUser)
+					adminUserRoutes.DELETE("/:id", handlers.DeleteUser)
+				}
 			}
 
 			configRoutes := protected.Group("/configs")

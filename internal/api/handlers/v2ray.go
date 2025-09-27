@@ -3,34 +3,37 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/db"
+	"k2ray/internal/security"
 	"k2ray/internal/v2ray"
-	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateConfigPayload defines the structure for creating a new V2Ray config.
 type CreateConfigPayload struct {
-	Name       string          `json:"name" binding:"required"`
-	Protocol   string          `json:"protocol" binding:"required"`
+	Name       string          `json:"name" binding:"required,min=3,max=50"`
+	Protocol   string          `json:"protocol" binding:"required,oneof=vmess vless shadowsocks trojan"`
 	ConfigData json.RawMessage `json:"config_data" binding:"required"`
 }
 
 // TransportSettings defines common transport settings for V2Ray protocols.
 type TransportSettings struct {
-	Network     string        `json:"net"`      // "tcp", "kcp", "ws", "h2", "quic", "grpc"
-	Security    string        `json:"tls"`      // "none", "tls"
-	WsSettings  WsSettings    `json:"wsSettings"`
+	Network      string       `json:"net"` // "tcp", "kcp", "ws", "h2", "quic", "grpc"
+	Security     string       `json:"tls"` // "none", "tls"
+	WsSettings   WsSettings   `json:"wsSettings"`
 	GrpcSettings GrpcSettings `json:"grpcSettings"`
 }
 
 // WsSettings defines WebSocket-specific transport settings.
 type WsSettings struct {
-	Path    string `json:"path"`
+	Path    string            `json:"path"`
 	Headers map[string]string `json:"headers"`
 }
 
@@ -41,25 +44,25 @@ type GrpcSettings struct {
 
 // VmessConfigData defines the structure for a VMess config.
 type VmessConfigData struct {
-	V          string   `json:"v"`
-	Add        string   `json:"add"`
-	Port       any      `json:"port"`
-	ID         string   `json:"id"`
-	Aid        int      `json:"aid"`
-	Type       string   `json:"type"` // Header type
-	Host       string   `json:"host"`
-	Path       string   `json:"path"`
-	TransportSettings
+	V                 string   `json:"v"`
+	Add               string   `json:"add"`
+	Port              any      `json:"port"`
+	ID                string   `json:"id"`
+	Aid               int      `json:"aid"`
+	Type              string   `json:"type"` // Header type
+	Host              string   `json:"host"`
+	Path              string   `json:"path"`
+	TransportSettings `json:","`
 }
 
 // VlessConfigData defines the structure for a VLESS config.
 type VlessConfigData struct {
-	ID         string   `json:"id"`
-	Address    string   `json:"add"`
-	Port       any      `json:"port"`
-	Encryption string   `json:"encryption"`
-	Flow       string   `json:"flow"`
-	TransportSettings
+	ID                string   `json:"id"`
+	Address           string   `json:"add"`
+	Port              any      `json:"port"`
+	Encryption        string   `json:"encryption"`
+	Flow              string   `json:"flow"`
+	TransportSettings `json:","`
 }
 
 // ShadowsocksConfigData defines the structure for a Shadowsocks config.
@@ -68,17 +71,15 @@ type ShadowsocksConfigData struct {
 	ServerPort int    `json:"server_port"`
 	Password   string `json:"password"`
 	Method     string `json:"method"`
-	// Shadowsocks doesn't typically have complex transport settings in the same way,
-	// but we can include basic ones if needed in the future.
 }
 
 // TrojanConfigData defines the structure for a Trojan config.
 type TrojanConfigData struct {
-	Server     string   `json:"server"`
-	ServerPort int      `json:"server_port"`
-	Password   string   `json:"password"`
-	SNI        string   `json:"sni"`
-	TransportSettings
+	Server            string   `json:"server"`
+	ServerPort        int      `json:"server_port"`
+	Password          string   `json:"password"`
+	SNI               string   `json:"sni"`
+	TransportSettings `json:","`
 }
 
 // isValidatable defines an interface for config data structs.
@@ -113,7 +114,6 @@ func (c TrojanConfigData) validate() error {
 	}
 	return nil
 }
-
 
 // ValidationError is a custom error type for validation failures.
 type ValidationError struct {
@@ -151,7 +151,6 @@ func validateAndDecode(protocol string, data json.RawMessage) (isValidatable, er
 	return v, nil
 }
 
-
 // CreateConfig is the handler for creating a new V2Ray configuration.
 func CreateConfig(c *gin.Context) {
 	var payload CreateConfigPayload
@@ -160,7 +159,6 @@ func CreateConfig(c *gin.Context) {
 		return
 	}
 
-	// Validate config_data based on the protocol
 	if _, err := validateAndDecode(payload.Protocol, payload.ConfigData); err != nil {
 		if verr, ok := err.(*ValidationError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": verr.Msg})
@@ -170,50 +168,32 @@ func CreateConfig(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from the context (set by AuthMiddleware)
-	userIDVal, exists := c.Get(middleware.ContextUserIDKey)
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in context"})
-		return
-	}
+	userIDVal, _ := c.Get(middleware.ContextUserIDKey)
 	userID := userIDVal.(int64)
 
-	// Insert into the database
 	insertSQL := `INSERT INTO configurations (user_id, name, protocol, config_data) VALUES (?, ?, ?, ?)`
-	stmt, err := db.DB.Prepare(insertSQL)
+	res, err := db.DB.Exec(insertSQL, userID, payload.Name, payload.Protocol, string(payload.ConfigData))
 	if err != nil {
-		log.Printf("Error preparing SQL for CreateConfig: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create configuration"})
-		return
-	}
-	defer stmt.Close()
-
-	res, err := stmt.Exec(userID, payload.Name, payload.Protocol, string(payload.ConfigData))
-	if err != nil {
-		log.Printf("Error executing SQL for CreateConfig: %v", err)
+		log.Error().Err(err).Msg("Error executing SQL for CreateConfig")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create configuration"})
 		return
 	}
 
-	// Get the ID of the newly created config
-	newID, err := res.LastInsertId()
-	if err != nil {
-		log.Printf("Error getting last insert ID for CreateConfig: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve new configuration ID"})
-		return
-	}
+	newID, _ := res.LastInsertId()
 
-	// Return the newly created resource
+	// Audit log
+	details := fmt.Sprintf("Configuration '%s' created with protocol '%s'", payload.Name, payload.Protocol)
+	security.LogEvent(c, security.ConfigCreated, newID, details)
+
 	newConfig := db.Configuration{
 		ID:         newID,
 		UserID:     userID,
 		Name:       payload.Name,
 		Protocol:   payload.Protocol,
 		ConfigData: string(payload.ConfigData),
-		CreatedAt:  time.Now(), // Approximate, DB value is more accurate
-		UpdatedAt:  time.Now(), // Approximate
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
-
 	c.JSON(http.StatusCreated, newConfig)
 }
 
@@ -224,7 +204,7 @@ func ListConfigs(c *gin.Context) {
 	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE user_id = ?`
 	rows, err := db.DB.Query(querySQL, userID)
 	if err != nil {
-		log.Printf("Error querying configs for user %d: %v", userID, err)
+		log.Error().Err(err).Int64("user_id", userID.(int64)).Msg("Error querying configs for user")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve configurations"})
 		return
 	}
@@ -234,7 +214,7 @@ func ListConfigs(c *gin.Context) {
 	for rows.Next() {
 		var config db.Configuration
 		if err := rows.Scan(&config.ID, &config.UserID, &config.Name, &config.Protocol, &config.ConfigData, &config.CreatedAt, &config.UpdatedAt); err != nil {
-			log.Printf("Error scanning config row: %v", err)
+			log.Error().Err(err).Msg("Error scanning config row")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process configurations"})
 			return
 		}
@@ -257,7 +237,7 @@ func GetConfig(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found or access denied"})
 			return
 		}
-		log.Printf("Error getting config %s for user %d: %v", configID, userID, err)
+		log.Error().Err(err).Str("config_id", configID).Int64("user_id", userID.(int64)).Msg("Error getting config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve configuration"})
 		return
 	}
@@ -266,9 +246,8 @@ func GetConfig(c *gin.Context) {
 }
 
 // UpdateConfigPayload defines the structure for updating a V2Ray config.
-// Using pointers allows for partial updates (PATCH-like behavior).
 type UpdateConfigPayload struct {
-	Name       *string         `json:"name"`
+	Name       *string         `json:"name" binding:"min=3,max=50"`
 	ConfigData *json.RawMessage `json:"config_data"`
 }
 
@@ -277,10 +256,8 @@ func UpdateConfig(c *gin.Context) {
 	configID := c.Param("id")
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
-	// 1. Fetch the existing config to ensure it exists and the user owns it.
 	var existingConfig db.Configuration
-	querySQL := `SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE id = ? AND user_id = ?`
-	err := db.DB.QueryRow(querySQL, configID, userID).Scan(&existingConfig.ID, &existingConfig.UserID, &existingConfig.Name, &existingConfig.Protocol, &existingConfig.ConfigData, &existingConfig.CreatedAt, &existingConfig.UpdatedAt)
+	err := db.DB.QueryRow("SELECT id, user_id, name, protocol, config_data, created_at, updated_at FROM configurations WHERE id = ? AND user_id = ?", configID, userID).Scan(&existingConfig.ID, &existingConfig.UserID, &existingConfig.Name, &existingConfig.Protocol, &existingConfig.ConfigData, &existingConfig.CreatedAt, &existingConfig.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found or access denied"})
@@ -290,19 +267,17 @@ func UpdateConfig(c *gin.Context) {
 		return
 	}
 
-	// 2. Bind the payload for the update.
 	var payload UpdateConfigPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
 		return
 	}
 
-	// 3. Apply updates from the payload to the existing config.
+	originalName := existingConfig.Name
 	if payload.Name != nil {
 		existingConfig.Name = *payload.Name
 	}
 	if payload.ConfigData != nil {
-		// Validate new config data before applying, based on the existing config's protocol
 		if _, err := validateAndDecode(existingConfig.Protocol, *payload.ConfigData); err != nil {
 			if verr, ok := err.(*ValidationError); ok {
 				c.JSON(http.StatusBadRequest, gin.H{"error": verr.Msg})
@@ -314,16 +289,19 @@ func UpdateConfig(c *gin.Context) {
 		existingConfig.ConfigData = string(*payload.ConfigData)
 	}
 
-	// 4. Save the updated record back to the database.
 	updateSQL := `UPDATE configurations SET name = ?, config_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`
 	_, err = db.DB.Exec(updateSQL, existingConfig.Name, existingConfig.ConfigData, configID, userID)
 	if err != nil {
-		log.Printf("Error executing update for config %s: %v", configID, err)
+		log.Error().Err(err).Str("config_id", configID).Msg("Error executing update for config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update configuration"})
 		return
 	}
 
-	// 5. Return the full updated configuration.
+	// Audit log
+	configIDInt, _ := strconv.ParseInt(configID, 10, 64)
+	details := fmt.Sprintf("Configuration '%s' (was '%s') updated", existingConfig.Name, originalName)
+	security.LogEvent(c, security.ConfigUpdated, configIDInt, details)
+
 	c.JSON(http.StatusOK, existingConfig)
 }
 
@@ -332,30 +310,35 @@ func DeleteConfig(c *gin.Context) {
 	configID := c.Param("id")
 	userID, _ := c.Get(middleware.ContextUserIDKey)
 
-	deleteSQL := `DELETE FROM configurations WHERE id = ? AND user_id = ?`
-	res, err := db.DB.Exec(deleteSQL, configID, userID)
+	var configName string
+	err := db.DB.QueryRow("SELECT name FROM configurations WHERE id = ? AND user_id = ?", configID, userID).Scan(&configName)
 	if err != nil {
-		log.Printf("Error deleting config %s: %v", configID, err)
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found or access denied"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve configuration for deletion"})
+		return
+	}
+
+	deleteSQL := `DELETE FROM configurations WHERE id = ? AND user_id = ?`
+	_, err = db.DB.Exec(deleteSQL, configID, userID)
+	if err != nil {
+		log.Error().Err(err).Str("config_id", configID).Msg("Error deleting config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete configuration"})
 		return
 	}
 
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check deletion status"})
-		return
-	}
-	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found or access denied"})
-		return
-	}
+	// Audit log
+	configIDInt, _ := strconv.ParseInt(configID, 10, 64)
+	details := fmt.Sprintf("Configuration '%s' deleted", configName)
+	security.LogEvent(c, security.ConfigDeleted, configIDInt, details)
 
 	c.Status(http.StatusNoContent)
 }
 
 // --- V2Ray Process Management Handlers ---
 
-// StartV2Ray starts the V2Ray service.
 func StartV2Ray(c *gin.Context) {
 	if err := v2ray.Start(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -364,7 +347,6 @@ func StartV2Ray(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "V2Ray service started successfully (mocked)."})
 }
 
-// StopV2Ray stops the V2Ray service.
 func StopV2Ray(c *gin.Context) {
 	if err := v2ray.Stop(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -373,7 +355,6 @@ func StopV2Ray(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "V2Ray service stopped successfully (mocked)."})
 }
 
-// GetV2RayStatus gets the current status of the V2Ray service.
 func GetV2RayStatus(c *gin.Context) {
 	isRunning, pid := v2ray.Status()
 	status := "stopped"
@@ -382,6 +363,6 @@ func GetV2RayStatus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status": status,
-		"pid":    pid, // Will be 0 if not running
+		"pid":    pid,
 	})
 }

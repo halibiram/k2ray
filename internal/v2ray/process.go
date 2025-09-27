@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"k2ray/internal/db"
-	"log"
 	"os"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -62,11 +63,14 @@ func Start() error {
 	}
 
 	// 4. Mock starting the process
-	log.Printf("MOCK: Would run command: %s -config %s", V2RayExecutable, V2RayConfigPath)
+	log.Info().
+		Str("executable", V2RayExecutable).
+		Str("config_path", V2RayConfigPath).
+		Msg("MOCK: Would run V2Ray start command")
 	manager.isRunning = true
 	manager.pid = 12345 // Mock PID
 
-	log.Println("Mock V2Ray process started successfully.")
+	log.Info().Msg("Mock V2Ray process started successfully.")
 	return nil
 }
 
@@ -80,11 +84,11 @@ func Stop() error {
 	}
 
 	// Mock killing the process
-	log.Printf("MOCK: Would kill process with PID: %d", manager.pid)
+	log.Info().Int("pid", manager.pid).Msg("MOCK: Would kill V2Ray process")
 	manager.isRunning = false
 	manager.pid = 0
 
-	log.Println("Mock V2Ray process stopped successfully.")
+	log.Info().Msg("Mock V2Ray process stopped successfully.")
 	return nil
 }
 
