@@ -43,16 +43,6 @@
       :qr-value="qrCodeValue"
       @close="closeQrModal"
     />
-
-    <ConfirmModal
-      :is-open="isConfirmModalOpen"
-      :title="t('configManager.confirmDelete.title')"
-      :message="t('configManager.confirmDelete.message')"
-      :confirm-button-text="t('common.delete')"
-      :cancel-button-text="t('common.cancel')"
-      @confirm="confirmDelete"
-      @close="closeConfirmModal"
-    />
   </div>
 </template>
 
@@ -63,11 +53,8 @@ import ConfigList from '../components/config/ConfigList.vue'
 import ConfigEditor from '../components/config/ConfigEditor.vue'
 import QrCodeModal from '../components/config/QrCodeModal.vue'
 import ConfigImport from '../components/config/ConfigImport.vue'
-import ConfirmModal from '../components/common/ConfirmModal.vue'
-import { useI18n } from 'vue-i18n'
 
 const configStore = useConfigStore()
-const { t } = useI18n()
 
 const isModalOpen = ref(false)
 const editingConfig = ref<V2rayConfig | null>(null)
@@ -75,28 +62,14 @@ const editingConfig = ref<V2rayConfig | null>(null)
 const isQrModalOpen = ref(false)
 const qrCodeValue = ref('')
 
-const isConfirmModalOpen = ref(false)
-const configToDeleteId = ref<number | null>(null)
-
 onMounted(() => {
   configStore.fetchConfigs()
 })
 
-const handleDelete = (id: number) => {
-  configToDeleteId.value = id
-  isConfirmModalOpen.value = true
-}
-
-const confirmDelete = async () => {
-  if (configToDeleteId.value !== null) {
-    await configStore.deleteConfig(configToDeleteId.value)
+const handleDelete = async (id: number) => {
+  if (window.confirm('Are you sure you want to delete this configuration?')) {
+    await configStore.deleteConfig(id)
   }
-  closeConfirmModal()
-}
-
-const closeConfirmModal = () => {
-  isConfirmModalOpen.value = false
-  configToDeleteId.value = null
 }
 
 const handleSetActive = async (id: number) => {

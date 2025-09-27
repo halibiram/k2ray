@@ -4,11 +4,7 @@
     "description": "Manage your V2Ray configurations.",
     "createNew": "Create New Config",
     "loading": "Loading configurations...",
-    "error": "Error: {error}",
-    "confirmDelete": {
-      "title": "Confirm Deletion",
-      "message": "Are you sure you want to delete this configuration? This action cannot be undone."
-    }
+    "error": "Error: {error}"
   },
   "configList": {
     "name": "Name",
@@ -32,8 +28,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
-    "logout": "Logout",
-    "delete": "Delete"
+    "logout": "Logout"
   },
   "header": {
     "title": "k2ray"

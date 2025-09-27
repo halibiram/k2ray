@@ -1,7 +1,7 @@
 <template>
   <form class="space-y-6" @submit.prevent="handleSubmit">
     <div>
-      <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+      <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
       <div class="mt-1">
         <input
           id="username"
@@ -9,13 +9,13 @@
           name="username"
           type="text"
           required
-          class="block w-full px-3 py-2 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100"
+          class="block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         />
       </div>
     </div>
 
     <div>
-      <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+      <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
       <div class="mt-1">
         <input
           id="password"
@@ -23,7 +23,7 @@
           name="password"
           type="password"
           required
-          class="block w-full px-3 py-2 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100"
+          class="block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         />
       </div>
     </div>
@@ -37,11 +37,7 @@
       </button>
     </div>
 
-    <div
-      v-if="authStore.error"
-      class="p-4 text-sm text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 rounded-md"
-      role="alert"
-    >
+    <div v-if="authStore.error" class="p-4 text-sm text-red-700 bg-red-100 rounded-md" role="alert">
       <span class="font-medium">Error:</span> {{ authStore.error }}
     </div>
   </form>

@@ -1,18 +1,28 @@
 <template>
-  <div>
-    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
-    <p class="mt-2 text-gray-600 dark:text-gray-300">System status overview</p>
+  <div class="p-4 sm:p-6 lg:p-8">
+    <h1 class="text-3xl font-bold text-base-content">Dashboard</h1>
+    <p class="mt-2 text-base-content/70">System status overview</p>
 
     <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <StatusCard title="K2Ray API Status" :status="systemStore.apiStatus" />
       <StatusCard title="V2Ray Service Status" :status="systemStore.v2rayStatus?.status" />
     </div>
 
-    <div
-      v-if="systemStore.error"
-      class="mt-4 p-4 text-red-700 bg-red-100 border border-red-400 rounded-md dark:bg-red-900 dark:text-red-200 dark:border-red-700"
-    >
-      <p>An error occurred: {{ systemStore.error }}</p>
+    <div v-if="systemStore.error" class="mt-4 alert alert-error">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="stroke-current shrink-0 h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span>An error occurred: {{ systemStore.error }}</span>
     </div>
   </div>
 </template>

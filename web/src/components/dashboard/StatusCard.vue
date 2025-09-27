@@ -1,7 +1,9 @@
 <template>
-  <div class="p-4 rounded-lg shadow-md" :class="cardColor">
-    <h3 class="text-lg font-semibold text-white">{{ title }}</h3>
-    <p class="mt-2 text-3xl font-bold text-white">{{ statusText }}</p>
+  <div class="card shadow-xl" :class="cardColor">
+    <div class="card-body">
+      <h2 class="card-title">{{ title }}</h2>
+      <p class="text-3xl font-bold">{{ statusText }}</p>
+    </div>
   </div>
 </template>
 
@@ -17,12 +19,12 @@ const cardColor = computed(() => {
   switch (props.status) {
     case 'online':
     case 'running':
-      return 'bg-green-500 dark:bg-green-600'
+      return 'bg-success text-success-content'
     case 'offline':
     case 'stopped':
-      return 'bg-red-500 dark:bg-red-600'
+      return 'bg-error text-error-content'
     default:
-      return 'bg-gray-400 dark:bg-gray-500'
+      return 'bg-base-200 text-base-content'
   }
 })
 
