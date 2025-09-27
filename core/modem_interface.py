@@ -1,61 +1,47 @@
-import httpx
-import logging
-from typing import Optional, Dict, Any
+from abc import ABC, abstractmethod
 
-logger = logging.getLogger(__name__)
-
-class ModemInterface:
+class ModemInterface(ABC):
     """
-    A basic interface for communicating with a Keenetic modem.
-    This class will be expanded in future tasks.
+    Abstract base class defining the interface for modem interactions.
+    This serves as a stand-in for the deliverable from TASK 1.
     """
-    def __init__(self, host: str, username: str = "admin", password: str = ""):
-        self.host = host
-        self.base_url = f"http://{self.host}"
-        self.username = username
-        self.password = password
-        self._session = httpx.AsyncClient(base_url=self.base_url)
-        self._auth_token: Optional[str] = None
 
-    async def connect(self) -> bool:
-        """
-        Establishes a connection and authenticates with the modem.
-        For GÖREV 1, this is a placeholder.
-        """
-        logger.info(f"Attempting to connect to modem at {self.host}")
-        # In a real scenario, we would perform an authentication request.
-        # For now, we'll just check if the device is reachable.
-        try:
-            response = await self._session.get("/")
-            response.raise_for_status()
-            logger.info(f"Successfully connected to {self.host}")
-            return True
-        except httpx.RequestError as e:
-            logger.error(f"Failed to connect to {self.host}: {e}")
-            return False
+    @abstractmethod
+    async def connect(self, host, username, password):
+        """Establishes a connection to the modem."""
+        pass
 
-    async def get_health_check(self) -> Dict[str, Any]:
-        """
-        Performs a basic health check of the modem.
-        """
-        # This is a placeholder for a more comprehensive health check.
-        # It currently just checks for basic connectivity.
-        is_connected = await self.connect()
-        return {"status": "online" if is_connected else "offline"}
+    @abstractmethod
+    async def disconnect(self):
+        """Closes the connection to the modem."""
+        pass
 
-    async def close(self):
-        """Closes the HTTP session."""
-        await self._session.aclose()
-        logger.info("Session closed.")
+    @abstractmethod
+    async def get_dsl_status(self):
+        """Retrieves the current DSL status and metrics."""
+        pass
 
-async def main():
-    # Example usage
-    modem_ip = "192.168.1.1"  # Example IP
-    interface = ModemInterface(host=modem_ip)
-    health = await interface.get_health_check()
-    print(f"Modem health: {health}")
-    await interface.close()
+    @abstractmethod
+    async def execute_raw_command(self, command):
+        """Executes a raw command on the modem's shell or API."""
+        pass
 
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    @abstractmethod
+    async def manipulate_line_length(self, target_length_m):
+        """Simulates a shorter line length by adjusting DSL parameters."""
+        pass
+
+    @abstractmethod
+    async def spoof_snr_values(self, target_snr_db):
+        """Spoofs the Signal-to-Noise Ratio (SNR) values."""
+        pass
+
+    @abstractmethod
+    async def adjust_attenuation(self, target_db):
+        """Adjusts the line attenuation values reported by the modem."""
+        pass
+
+    @abstractmethod
+    async def optimize_bit_loading(self):
+        """Optimizes the bit-loading table for better performance."""
+        pass
