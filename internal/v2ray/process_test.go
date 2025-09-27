@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 
 	// Setup router for any potential handler calls if needed (good practice)
 	testRouter := gin.Default()
-	api.SetupRouter(testRouter)
+	api.SetupRouter(testRouter, false) // Disable rate limiting for tests
 
 	code := m.Run()
 

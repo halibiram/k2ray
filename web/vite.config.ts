@@ -14,6 +14,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    hmr: {
+      overlay: false,
+    },
   },
   test: {
     globals: true,

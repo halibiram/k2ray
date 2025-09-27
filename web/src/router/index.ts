@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 import LoginView from '../views/Login.vue'
+import Verify2FAView from '../views/Verify2FA.vue'
+import Setup2FAView from '../views/Setup2FA.vue'
 import DashboardView from '../views/Dashboard.vue'
 import ConfigManagerView from '../views/ConfigManager.vue'
 import SystemStatusView from '../views/SystemStatus.vue'
@@ -15,6 +17,11 @@ const routes = [
     component: LoginView,
   },
   {
+    path: '/verify-2fa',
+    name: 'Verify2FA',
+    component: Verify2FAView,
+  },
+  {
     path: '/',
     component: Layout,
     meta: { requiresAuth: true },
@@ -23,6 +30,7 @@ const routes = [
       { path: '/configurations', name: 'Configurations', component: ConfigManagerView },
       { path: '/system-status', name: 'SystemStatus', component: SystemStatusView },
       { path: '/monitoring', name: 'Monitoring', component: MonitoringView },
+      { path: '/settings/2fa', name: 'Setup2FA', component: Setup2FAView },
     ],
   },
   // Catch-all to redirect to the main page

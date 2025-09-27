@@ -5,6 +5,7 @@ import (
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/auth"
 	"k2ray/internal/db"
+	"k2ray/internal/twofactor"
 	"k2ray/internal/utils"
 	"log"
 	"net/http"
@@ -14,10 +15,15 @@ import (
 )
 
 // LoginPayload defines the expected JSON structure for a login request.
-// Gin's `binding:"required"` tag ensures these fields are present in the request.
 type LoginPayload struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+// Login2FAPayload defines the structure for the 2FA verification step.
+type Login2FAPayload struct {
+	TwoFactorToken string `json:"two_factor_token" binding:"required"`
+	Code           string `json:"code" binding:"required"`
 }
 
 // RefreshPayload defines the expected JSON structure for a token refresh request.
@@ -35,14 +41,12 @@ func Login(c *gin.Context) {
 
 	// 1. Fetch user from the database by username
 	user := &db.User{}
-	err := db.DB.QueryRow("SELECT id, username, password_hash FROM users WHERE username = ?", payload.Username).Scan(&user.ID, &user.Username, &user.PasswordHash)
+	err := db.DB.QueryRow("SELECT id, username, password_hash, two_factor_enabled FROM users WHERE username = ?", payload.Username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.TwoFactorEnabled)
 	if err != nil {
-		// If no user is found, return a generic "invalid credentials" error to prevent username enumeration.
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}
-		// For other database errors, log the error and return a generic server error.
 		log.Printf("Database error on login for user %s: %v", payload.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
@@ -54,7 +58,23 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 3. Generate JWT access and refresh tokens
+	// 3. Check if 2FA is enabled
+	if user.TwoFactorEnabled {
+		// Generate a temporary token that proves the password was correct.
+		twoFactorToken, err := auth.Generate2FAToken(user.ID, user.Username)
+		if err != nil {
+			log.Printf("2FA token generation error for user %s: %v", payload.Username, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not initiate 2FA process"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message":          "2FA code required",
+			"two_factor_token": twoFactorToken,
+		})
+		return
+	}
+
+	// 4. If 2FA is not enabled, generate standard tokens
 	accessToken, refreshToken, err := auth.GenerateTokens(user.ID, user.Username)
 	if err != nil {
 		log.Printf("Token generation error for user %s: %v", payload.Username, err)
@@ -62,7 +82,51 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 4. Return tokens to the client
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Login successful",
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
+// Login2FA handles the second step of authentication for users with 2FA enabled.
+func Login2FA(c *gin.Context) {
+	var payload Login2FAPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
+		return
+	}
+
+	// 1. Validate the temporary 2FA token
+	claims, err := auth.Validate2FAToken(payload.TwoFactorToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired 2FA token"})
+		return
+	}
+
+	// 2. Fetch the user's 2FA secret from the database
+	var twoFactorSecret sql.NullString
+	err = db.DB.QueryRow("SELECT two_factor_secret FROM users WHERE id = ?", claims.UserID).Scan(&twoFactorSecret)
+	if err != nil || !twoFactorSecret.Valid {
+		log.Printf("Could not retrieve 2FA secret for user ID %d: %v", claims.UserID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify 2FA code"})
+		return
+	}
+
+	// 3. Validate the provided TOTP code
+	if !twofactor.ValidateCode(twoFactorSecret.String, payload.Code) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid 2FA code"})
+		return
+	}
+
+	// 4. If the code is valid, generate the final access and refresh tokens
+	accessToken, refreshToken, err := auth.GenerateTokens(claims.UserID, claims.Username)
+	if err != nil {
+		log.Printf("Token generation error for user %s after 2FA: %v", claims.Username, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate authentication tokens"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Login successful",
 		"access_token":  accessToken,

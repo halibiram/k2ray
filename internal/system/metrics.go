@@ -1,8 +1,7 @@
 package system
 
 import (
-	"math/rand"
-	"time"
+	"k2ray/internal/utils"
 )
 
 // TrafficMetrics represents traffic data.
@@ -27,28 +26,24 @@ type PerformanceMetrics struct {
 // GetTrafficMetrics generates mock traffic metrics.
 func GetTrafficMetrics() *TrafficMetrics {
 	return &TrafficMetrics{
-		Uplink:   rand.Int63n(100000),
-		Downlink: rand.Int63n(1000000),
+		Uplink:   utils.SecureIntn(100000),
+		Downlink: utils.SecureIntn(1000000),
 	}
 }
 
 // GetConnectionMetrics generates mock connection metrics.
 func GetConnectionMetrics() *ConnectionMetrics {
 	return &ConnectionMetrics{
-		Active:   rand.Intn(100),
-		Total:    rand.Intn(1000),
-		Failures: rand.Intn(10),
+		Active:   int(utils.SecureIntn(100)),
+		Total:    int(utils.SecureIntn(1000)),
+		Failures: int(utils.SecureIntn(10)),
 	}
 }
 
 // GetPerformanceMetrics generates mock performance metrics.
 func GetPerformanceMetrics() *PerformanceMetrics {
 	return &PerformanceMetrics{
-		CPUUsage:    rand.Float64() * 100,
-		MemoryUsage: rand.Float64() * 100,
+		CPUUsage:    utils.SecureFloat64() * 100,
+		MemoryUsage: utils.SecureFloat64() * 100,
 	}
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }

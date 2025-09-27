@@ -10,10 +10,17 @@ import (
 )
 
 // Claims defines the structure of the JWT claims for this application.
-// It includes the standard RegisteredClaims and custom claims like Username.
 type Claims struct {
 	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
+
+// TwoFactorClaims defines the structure for the temporary token used during 2FA.
+type TwoFactorClaims struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Purpose  string `json:"purpose"` // e.g., "2fa-verification"
 	jwt.RegisteredClaims
 }
 
@@ -83,6 +90,61 @@ func ValidateToken(tokenString string) (*Claims, error) {
 
 	if !token.Valid {
 		return nil, errors.New("token is invalid")
+	}
+
+	return claims, nil
+}
+
+// Generate2FAToken creates a short-lived, single-purpose token for 2FA verification.
+func Generate2FAToken(userID int64, username string) (string, error) {
+	if config.AppConfig.JWTSecret == "" {
+		return "", errors.New("JWT secret is not configured")
+	}
+
+	expirationTime := time.Now().Add(5 * time.Minute) // Short-lived
+	claims := &TwoFactorClaims{
+		UserID:   userID,
+		Username: username,
+		Purpose:  "2fa-verification",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "k2ray",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtKey := []byte(config.AppConfig.JWTSecret)
+	return token.SignedString(jwtKey)
+}
+
+// Validate2FAToken validates the temporary token used for 2FA.
+func Validate2FAToken(tokenString string) (*TwoFactorClaims, error) {
+	if config.AppConfig.JWTSecret == "" {
+		return nil, errors.New("JWT secret is not configured")
+	}
+
+	claims := &TwoFactorClaims{}
+	jwtKey := []byte(config.AppConfig.JWTSecret)
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return jwtKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("token is invalid")
+	}
+
+	// Verify the purpose of the token
+	if claims.Purpose != "2fa-verification" {
+		return nil, errors.New("invalid token purpose")
 	}
 
 	return claims, nil

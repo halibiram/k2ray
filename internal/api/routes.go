@@ -7,9 +7,10 @@ import (
 )
 
 // SetupRouter configures the routes for the application.
-func SetupRouter(router *gin.Engine) {
+func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 	// All API routes will be prefixed with /api/v1
 	apiV1 := router.Group("/api/v1")
+	apiV1.Use(middleware.SecurityHeadersMiddleware()) // Apply security headers to all /api/v1 routes
 	{
 		// Public routes (no authentication required)
 		systemRoutes := apiV1.Group("/system")
@@ -18,8 +19,14 @@ func SetupRouter(router *gin.Engine) {
 		}
 
 		authRoutes := apiV1.Group("/auth")
+		if enableRateLimiter {
+			// Apply rate limiting to authentication routes
+			authLimiter := middleware.RateLimiterMiddleware("10-M") // 10 requests per minute
+			authRoutes.Use(authLimiter)
+		}
 		{
 			authRoutes.POST("/login", handlers.Login)
+			authRoutes.POST("/login/2fa", handlers.Login2FA) // New endpoint for 2FA verification
 			authRoutes.POST("/refresh", handlers.Refresh)
 		}
 
@@ -70,6 +77,14 @@ func SetupRouter(router *gin.Engine) {
 
 			// WebSocket route
 			protected.GET("/ws", handlers.WebSocketHandler)
+
+			// 2FA management routes
+			twoFactorRoutes := protected.Group("/2fa")
+			{
+				twoFactorRoutes.POST("/enable", handlers.Enable2FA)
+				twoFactorRoutes.POST("/verify", handlers.Verify2FA)
+				twoFactorRoutes.POST("/disable", handlers.Disable2FA)
+			}
 		}
 	}
 }

@@ -56,7 +56,7 @@ func Start() error {
 	}
 
 	// 3. Write config to file
-	err = os.WriteFile(V2RayConfigPath, []byte(configData), 0644)
+	err = os.WriteFile(V2RayConfigPath, []byte(configData), 0600)
 	if err != nil {
 		return fmt.Errorf("could not write V2Ray config file: %w", err)
 	}

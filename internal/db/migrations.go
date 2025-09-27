@@ -12,7 +12,10 @@ func RunMigrations() {
 		CREATE TABLE IF NOT EXISTS users (
 			"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			"username" TEXT NOT NULL UNIQUE,
-			"password_hash" TEXT NOT NULL
+			"password_hash" TEXT NOT NULL,
+			"two_factor_secret" TEXT,
+			"two_factor_enabled" INTEGER NOT NULL DEFAULT 0,
+			"two_factor_recovery_codes" TEXT
 		);
 	`)
 
