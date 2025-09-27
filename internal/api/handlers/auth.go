@@ -6,6 +6,7 @@ import (
 	"k2ray/internal/api/middleware"
 	"k2ray/internal/auth"
 	"k2ray/internal/db"
+	"k2ray/internal/metrics"
 	"k2ray/internal/security"
 	"k2ray/internal/twofactor"
 	"k2ray/internal/utils"
@@ -45,6 +46,7 @@ func Login(c *gin.Context) {
 	username := payload.Username
 
 	if security.IsLockedOut(username) || security.IsLockedOut(ip) {
+		metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 		details := fmt.Sprintf("Attempted login for locked out user '%s'", username)
 		security.LogEvent(c, security.LoginFailure, 0, details)
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many failed login attempts. Please try again later."})
@@ -55,6 +57,7 @@ func Login(c *gin.Context) {
 	err := db.DB.QueryRow("SELECT id, username, password_hash, role, two_factor_enabled FROM users WHERE username = ?", username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.Role, &user.TwoFactorEnabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 			security.RecordFailedAttempt(username)
 			security.RecordFailedAttempt(ip)
 			security.LogEvent(c, security.LoginFailure, 0, "Invalid username")
@@ -67,6 +70,7 @@ func Login(c *gin.Context) {
 	}
 
 	if !utils.CheckPasswordHash(payload.Password, user.PasswordHash) {
+		metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 		security.RecordFailedAttempt(user.Username)
 		security.RecordFailedAttempt(ip)
 		security.LogEvent(c, security.LoginFailure, user.ID, "Invalid password")
@@ -88,6 +92,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	metrics.UserLoginsTotal.WithLabelValues("success").Inc()
 	security.ResetAttempts(user.Username)
 	security.ResetAttempts(ip)
 	security.LogEvent(c, security.LoginSuccess, user.ID, "Login successful, no 2FA")
@@ -118,6 +123,7 @@ func Login2FA(c *gin.Context) {
 
 	claims, err := auth.Validate2FAToken(payload.TwoFactorToken)
 	if err != nil {
+		metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 		security.LogEvent(c, security.TwoFactorFailure, 0, "Invalid 2FA token")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired 2FA token"})
 		return
@@ -127,6 +133,7 @@ func Login2FA(c *gin.Context) {
 	userID := claims.UserID
 
 	if security.IsLockedOut(username) || security.IsLockedOut(ip) {
+		metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 		details := fmt.Sprintf("Attempted 2FA for locked out user '%s'", username)
 		security.LogEvent(c, security.TwoFactorFailure, userID, details)
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many failed login attempts. Please try again later."})
@@ -143,6 +150,7 @@ func Login2FA(c *gin.Context) {
 	}
 
 	if !twofactor.ValidateCode(twoFactorSecret.String, payload.Code) {
+		metrics.UserLoginsTotal.WithLabelValues("failure").Inc()
 		security.RecordFailedAttempt(username)
 		security.RecordFailedAttempt(ip)
 		security.LogEvent(c, security.TwoFactorFailure, userID, "Invalid 2FA code")
@@ -150,6 +158,7 @@ func Login2FA(c *gin.Context) {
 		return
 	}
 
+	metrics.UserLoginsTotal.WithLabelValues("success").Inc()
 	security.ResetAttempts(username)
 	security.ResetAttempts(ip)
 	security.LogEvent(c, security.TwoFactorSuccess, userID, "2FA verification successful")

@@ -20,6 +20,9 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 	router.Use(middleware.HTTPSRedirectMiddleware())
 	router.Use(middleware.CORSMiddleware())
 
+	// Health check endpoint - public, no prefix
+	router.GET("/health", handlers.HealthCheck)
+
 	// All API routes will be prefixed with /api/v1
 	apiV1 := router.Group("/api/v1")
 	apiV1.Use(middleware.SecurityHeadersMiddleware()) // Apply security headers to all /api/v1 routes
