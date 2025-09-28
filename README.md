@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-v1.0.0-blue)](https://github.com/halibiram/k2ray/releases)
 
-k2ray is a modern, web-based management panel for the V2Ray proxy tool. It provides a user-friendly interface to manage your V2Ray configurations, monitor system status, and view traffic metrics, all from your web browser.
+k2ray is a modern, web-based management panel for advanced network control, providing a unified interface for both the V2Ray proxy tool and Keenetic DSL optimization. It provides a user-friendly interface to manage your V2Ray configurations, optimize your DSL connection, monitor system status, and view traffic metrics, all from your web browser.
 
 ---
 
@@ -18,15 +18,27 @@ k2ray is a modern, web-based management panel for the V2Ray proxy tool. It provi
 
 ## ✨ Features
 
+### V2Ray Proxy Management
+
 *   **Advanced Configuration Management**: Easily create, edit, delete, and switch between multiple V2Ray configurations.
-*   **QR Code Integration**: Seamlessly export and import configurations using QR codes. Scan with your mobile device's camera or upload an image file.
+*   **QR Code Integration**: Seamlessly export and import configurations using QR codes.
 *   **Real-Time System Monitoring**: Keep an eye on system status, including CPU, memory, and disk usage.
 *   **Live Log Viewer**: View and search V2Ray logs directly from the web interface.
-*   **Traffic Metrics & Analytics**: Monitor real-time network traffic, connection statistics, and data usage with interactive charts.
+*   **Traffic Metrics & Analytics**: Monitor real-time network traffic and connection statistics.
+
+### DSL Optimization (New)
+
+*   **Keenetic Modem Integration**: Directly interface with Keenetic modems to monitor and control your DSL connection.
+*   **DSL Bypass Capabilities**: Utilize advanced techniques to optimize line parameters and potentially boost connection speeds.
+*   **Academic Research Support**: Includes tools for logging and data collection for research purposes.
+
+### General Features
+
+*   **Unified Dashboard**: Manage both V2Ray proxy and DSL optimization from a single, integrated panel.
 *   **Multi-Language Support**: Fully localized interface with support for both English and Turkish.
 *   **Customizable Themes**: Switch between light and dark themes for a comfortable user experience.
 *   **Secure Access**: Protect your panel with JWT-based authentication and optional Two-Factor Authentication (2FA).
-*   **RESTful API**: A well-documented API for programmatic access and integration.
+*   **RESTful API**: A well-documented API for programmatic access and integration, now with endpoints for both V2Ray and DSL.
 
 ---
 

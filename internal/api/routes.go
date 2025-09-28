@@ -103,6 +103,13 @@ func SetupRouter(router *gin.Engine, enableRateLimiter bool) {
 				v2rayRoutes.GET("/status", handlers.GetV2RayStatus)
 			}
 
+			// DSL bypass routes
+			dslRoutes := protected.Group("/dsl")
+			{
+				dslRoutes.POST("/boost", handlers.HandleDSLBoost)
+				dslRoutes.GET("/status", handlers.HandleDSLStatus)
+			}
+
 			// Metrics routes
 			metricsRoutes := protected.Group("/metrics")
 			{

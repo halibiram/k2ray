@@ -29,6 +29,11 @@ const routes = [
         component: () => import('../views/SystemStatus.vue'),
       },
       { path: '/monitoring', name: 'Monitoring', component: () => import('../views/Monitoring.vue') },
+      {
+        path: '/dsl-bypass',
+        name: 'DSLBypass',
+        component: () => import('../views/dsl/DslDashboard.vue'),
+      },
       { path: '/settings/2fa', name: 'Setup2FA', component: () => import('../views/Setup2FA.vue') },
     ],
   },

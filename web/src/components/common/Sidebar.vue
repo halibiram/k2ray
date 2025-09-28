@@ -30,6 +30,12 @@
           </svg>
           Monitoring
         </router-link>
+        <router-link to="/dsl-bypass" class="flex items-center px-4 py-2 mt-2 text-gray-400 hover:bg-gray-700 hover:text-gray-100 rounded-md" active-class="bg-gray-900 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          DSL Bypass
+        </router-link>
       </nav>
     </div>
   </div>
