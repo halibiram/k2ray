@@ -1,159 +1,240 @@
 # dsl_bypass_ultra/core/modem_interface.py
 
 import requests
-import time
+import hashlib
 
-class ModemInterface:
+class KeeneticAPI:
     """
-    Keenetic Modem API Wrapper (Lab Simulation)
+    Real HTTP API client for Keenetic routers.
 
-    This class simulates communication with a Keenetic modem for lab testing.
-    It holds an internal state and modifies it based on the "set" commands,
-    allowing development without a physical modem.
-
-    GÖREV 2: Bu sınıf, bypass motorunu test etmek için simülasyon mantığıyla dolduruldu.
+    This class replaces the simulation and implements the actual communication
+    with the Keenetic Web Interface to send commands and receive data.
     """
-
     def __init__(self, host, username, password, protocol='http'):
         """
-        Initializes the simulated modem interface.
+        Initializes the real Keenetic API client.
+
+        Args:
+            host (str): The IP address or hostname of the modem.
+            username (str): The administrator username.
+            password (str): The administrator password.
+            protocol (str): 'http' or 'https'
         """
         self.host = host
         self.username = username
         self.password = password
-        self.protocol = protocol
-        self.session = None
-
-        # --- SİMÜLASYON DURUMU (MODEM STATE) ---
-        # Bu, modemin mevcut durumunu temsil eder.
-        # Başlangıç durumu: 300m hat, ~30 Mbps hız
-        self._modem_state = {
-            "status": "Up",
-            "snr_margin_down": 25.0,  # Normal SNR
-            "snr_margin_up": 28.0,
-            "attenuation_down": 18.5, # 300m hattı temsil eden zayıflama
-            "attenuation_up": 12.0,
-            "data_rate_down": 32540,  # Başlangıç hızı (yaklaşık 30 Mbps)
-            "data_rate_up": 5120,
-            "crc_errors": 0,
-        }
-        print(f"SIMULATED ModemInterface initialized for host: {self.host}")
+        self.base_url = f"{protocol}://{self.host}"
+        self.session = requests.Session()
+        self.csrf_token = None
+        self.is_connected = False
+        print(f"KeeneticAPI initialized for host: {self.host}")
 
     def connect(self):
         """
-        Simulates establishing a connection to the modem.
+        Establishes a connection and authenticates with the modem.
+
+        Handles the challenge-response authentication mechanism used by Keenetic.
+        1. Get a challenge string from the router.
+        2. Create a response by hashing the challenge with the password.
+        3. Send the response to log in.
         """
-        print("SIM: Connecting to the modem...")
-        time.sleep(0.1) # Simüle edilmiş ağ gecikmesi
-        print("SIM: Connection successful.")
-        return True
+        print("Attempting to connect to the Keenetic router...")
+        try:
+            # 1. Get challenge
+            auth_url = f"{self.base_url}/auth"
+            response = self.session.get(auth_url, timeout=5)
+            response.raise_for_status() # Raise an exception for bad status codes
+            challenge = response.json().get('challenge')
+            if not challenge:
+                print("Error: Could not retrieve challenge string from router.")
+                return False
+
+            # 2. Create response
+            realm = "Keenetic" # Default realm
+            h1 = hashlib.md5(f"{self.username}:{realm}:{self.password}".encode()).hexdigest()
+            h2 = hashlib.md5(f"POST:/auth".encode()).hexdigest()
+            response_hash = hashlib.md5(f"{h1}:{challenge}:{h2}".encode()).hexdigest()
+
+            # 3. Send login request
+            login_payload = {
+                "login": self.username,
+                "challenge": challenge,
+                "response": response_hash
+            }
+            login_response = self.session.post(auth_url, json=login_payload, timeout=5)
+            login_response.raise_for_status()
+
+            # Check if login was successful by looking for the session cookie
+            if 'KSESSION' in self.session.cookies:
+                self.is_connected = True
+                print("Successfully connected and authenticated with the Keenetic router.")
+                # After login, we might need a CSRF token for subsequent requests
+                self._fetch_csrf_token()
+                return True
+            else:
+                print("Error: Authentication failed. Please check username and password.")
+                print(f"Response from router: {login_response.text}")
+                return False
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error connecting to the router: {e}")
+            return False
+
+    def _fetch_csrf_token(self):
+        """
+        Fetches the CSRF token required for POST commands after login.
+        It's usually found on the main page.
+        """
+        if not self.is_connected:
+            return
+
+        print("Fetching CSRF token...")
+        try:
+            main_page_url = f"{self.base_url}/"
+            response = self.session.get(main_page_url, timeout=5)
+            response.raise_for_status()
+            # The token is often in the headers, let's check there first
+            self.csrf_token = self.session.headers.get('X-CSRF-Token')
+            if self.csrf_token:
+                 self.session.headers.update({'X-CSRF-Token': self.csrf_token})
+                 print(f"CSRF token obtained: {self.csrf_token}")
+            else:
+                 print("Warning: Could not find X-CSRF-Token in headers. Commands might fail.")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Warning: Could not fetch main page to get CSRF token. Error: {e}")
+
 
     def disconnect(self):
         """
-        Simulates closing the connection to the modem.
+        Closes the connection to the modem.
         """
-        print("SIM: Disconnecting from the modem...")
-        self.session = None
-        pass
+        print("Disconnecting from the modem...")
+        self.session.close()
+        self.is_connected = False
+        print("Disconnected.")
 
     def get_dsl_status(self):
         """
-        Retrieves the current simulated DSL status from the internal state.
+        Retrieves the current DSL status from the modem by sending a CLI command.
 
         Returns:
-            dict: A copy of the internal modem state dictionary.
+            dict: A dictionary with DSL status parameters, or None on failure.
         """
-        print("SIM: Fetching DSL status...")
-        return self._modem_state.copy()
+        if not self.is_connected:
+            print("Error: Not connected. Please call connect() first.")
+            return None
+
+        print("Fetching DSL status from router...")
+        cli_url = f"{self.base_url}/api/cli"
+        payload = {"commands": ["show interface Dsl0"]}
+
+        try:
+            response = self.session.post(cli_url, json=payload, timeout=10)
+            response.raise_for_status()
+
+            cli_output = response.json().get('responses', [{}])[0].get('output', '')
+            if not cli_output:
+                print("Error: Empty response from CLI.")
+                return None
+
+            return self._parse_dsl_status(cli_output)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending CLI command: {e}")
+            return None
+        except (ValueError, IndexError) as e:
+            print(f"Error parsing CLI response: {e}")
+            return None
+
+    def _parse_dsl_status(self, cli_output):
+        """
+        Parses the raw text output from the 'show interface Dsl0' command.
+
+        Args:
+            cli_output (str): The raw text from the modem's CLI.
+
+        Returns:
+            dict: A structured dictionary of the DSL status.
+        """
+        status_dict = {}
+        lines = cli_output.splitlines()
+        for line in lines:
+            line = line.strip()
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip().lower().replace(" ", "_").replace("(", "").replace(")", "")
+                value = value.strip()
+
+                # Extract numeric values where possible
+                if "kbps" in value:
+                    status_dict[key] = int(value.split()[0])
+                elif "dB" in value:
+                    status_dict[key] = float(value.split()[0])
+                elif value.isdigit():
+                    status_dict[key] = int(value)
+                else:
+                    status_dict[key] = value
+
+        print(f"Parsed DSL status: {status_dict}")
+        return status_dict
 
     def set_dsl_parameters(self, params):
         """
-        Simulates setting DSL parameters by updating the internal state.
-        The core of the simulation happens here: new parameters affect the
-        modem's state, simulating how a real DSLAM would react.
+        Sets DSL parameters on the modem by sending a series of CLI commands.
 
         Args:
             params (dict): A dictionary of parameters to set.
+                           Example: {'snr_margin_down': 550} for 55.0 dB
 
         Returns:
-            bool: True, simulating success.
+            bool: True if the commands were sent successfully, False otherwise.
         """
-        print(f"SIM: Setting DSL parameters: {params}")
+        if not self.is_connected:
+            print("Error: Not connected. Please call connect() first.")
+            return False
 
-        # --- SİMÜLASYON MANTIĞI ---
-        # Gelen parametrelere göre modem durumunu güncelle.
+        commands = []
+        # Keenetic CLI typically takes SNR margin as an integer (e.g., 100 for 10.0 dB)
+        # We will handle the conversion from float to the required integer format.
+        if 'snr_margin_down' in params:
+            # The CLI command for SNR margin is often 'snr-margin'.
+            # It usually expects an integer representing the value in tenths of a dB.
+            # Example: 55.0 dB -> 550.
+            snr_value = int(float(params['snr_margin_down']) * 10)
+            commands.append(f"interface Dsl0 snr-margin {snr_value}")
 
-        # --- GÜNCELLENMİŞ SİMÜLASYON MANTIĞI ---
-        # Hedef 100+ Mbps hıza ulaşmak için daha gerçekçi bir model kullanıyoruz.
+        # Add other parameter-to-command mappings here as needed.
 
-        initial_rate = 32540  # Her zaman başlangıç hızını temel al
-        snr_boost_factor = 1.0
-        attenuation_boost_factor = 1.0
+        if not commands:
+            print("Warning: No valid parameters found to set.")
+            return False
 
-        # 1. SNR Spoofing Etkisi
-        # SNR'daki artışın hıza etkisini daha agresif modelle.
-        if 'target_snr_margin' in params:
-            new_snr = params['target_snr_margin']
-            original_snr = 25.0 # Başlangıç durumundaki SNR
-            # SNR'daki her 6dB artış hızı ~2x yapar. Bu logaritmik bir ilişkidir.
-            # (new/old) oranı yerine (new-old) farkını kullanmak daha iyi bir yaklaşım olabilir.
-            # Daha basit bir model: SNR'daki her 10dB'lik artış hızı 1.5x yapsın.
-            snr_boost_factor = 1 + (new_snr - original_snr) / 20.0 # (55-25)/20 = 1.5 -> 2.5x total
-            self._modem_state['snr_margin_down'] = float(new_snr)
-            print(f"SIM: SNR boost factor calculated: {snr_boost_factor:.2f}")
+        # Add command to save the configuration
+        commands.append("system configuration-save")
 
-        # 2. Kısa Hat Simülasyonu Etkisi (Düşük Zayıflama)
-        # Zayıflamanın 18.5'ten 1.0'a düşmesi çok ciddi bir iyileşmedir.
-        if 'target_attenuation' in params:
-            new_attenuation = params['target_attenuation']
-            # Bu etkiyi de bir çarpan olarak ekleyelim.
-            attenuation_boost_factor = 1.6 # Kısa hat simülasyonu için sabit bir çarpan
-            self._modem_state['attenuation_down'] = float(new_attenuation)
-            print(f"SIM: Attenuation boost factor applied: {attenuation_boost_factor:.2f}")
+        print(f"Sending commands to set DSL parameters: {commands}")
+        cli_url = f"{self.base_url}/api/cli"
+        payload = {"commands": commands}
 
-        # Yeni hızı, temel hız üzerinden çarpanları uygulayarak hesapla
-        new_rate = initial_rate * snr_boost_factor * attenuation_boost_factor
+        try:
+            response = self.session.post(cli_url, json=payload, timeout=15)
+            response.raise_for_status()
 
-        # Tavan hızı 125 Mbps olarak belirleyelim
-        self._modem_state['data_rate_down'] = min(int(new_rate), 125000)
+            # Check for errors in the response from the CLI
+            response_data = response.json().get('responses', [])
+            for resp in response_data:
+                if resp.get('status', {}).get('level') == 'error':
+                    error_msg = resp.get('status', {}).get('message', 'Unknown CLI error')
+                    print(f"Error executing command: {error_msg}")
+                    return False
 
-        print(f"SIM: New simulated state: {self._modem_state}")
-        time.sleep(0.2) # Komutun işlenmesini simüle et
-        return True
+            print("DSL parameters set and configuration saved successfully.")
+            return True
 
-    def _send_command(self, command):
-        """
-        Private method to simulate sending a command.
-        """
-        print(f"SIM: Sending command: '{command}'")
-        pass
-
-    def get_firmware_version(self):
-        """
-        Retrieves the modem's simulated firmware version.
-        """
-        print("SIM: Fetching firmware version...")
-        return "v3.7.C.0.0-1-labsim"
-
-    def get_full_state(self):
-        """
-        Returns the entire internal state of the modem for backup purposes.
-        GÖREV 4 için eklendi.
-        """
-        print("SIM: Getting full modem state for backup.")
-        return self._modem_state.copy()
-
-    def set_full_state(self, state):
-        """
-        Restores the entire internal state of the modem from a backup.
-        GÖREV 4 için eklendi.
-
-        Args:
-            state (dict): A dictionary representing the full modem state to restore.
-
-        Returns:
-            bool: True if the state was restored successfully.
-        """
-        print(f"SIM: Restoring full modem state from backup: {state}")
-        self._modem_state = state.copy()
-        return True
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending CLI commands to set parameters: {e}")
+            return False
+        except (ValueError, IndexError) as e:
+            print(f"Error parsing response after setting parameters: {e}")
+            return False

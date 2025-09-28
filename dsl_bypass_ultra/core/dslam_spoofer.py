@@ -1,6 +1,6 @@
 # dsl_bypass_ultra/core/dslam_spoofer.py
 
-from .modem_interface import ModemInterface
+from .modem_interface import KeeneticAPI
 from .parameter_manipulator import ParameterManipulator
 from .security_manager import SecurityManager
 
@@ -9,18 +9,18 @@ class DslamSpoofer:
     DSLAM Bypass Engine
 
     This class orchestrates the entire DSLAM bypass process. It uses the
-    ModemInterface to communicate with the modem and the ParameterManipulator
+    KeeneticAPI to communicate with the modem and the ParameterManipulator
     to calculate the required parameter changes.
 
     GÖREV 4: SecurityManager entegrasyonu eklendi.
     """
 
-    def __init__(self, modem_interface: ModemInterface, param_manipulator: ParameterManipulator, security_manager: SecurityManager):
+    def __init__(self, modem_interface: KeeneticAPI, param_manipulator: ParameterManipulator, security_manager: SecurityManager):
         """
         Initializes the DSLAM spoofer.
 
         Args:
-            modem_interface (ModemInterface): An instance of the modem interface.
+            modem_interface (KeeneticAPI): An instance of the Keenetic API client.
             param_manipulator (ParameterManipulator): An instance of the parameter manipulator.
             security_manager (SecurityManager): An instance of the security manager.
         """
