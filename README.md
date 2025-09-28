@@ -53,7 +53,7 @@ This section provides a brief overview of how to get the project running. For mo
     # Run the development server
     go run ./cmd/k2ray
     ```
-    The API server will start, typically on port `8080`.
+    The API server will start on port `8080`.
 
 3.  **Setup the Frontend (Web UI):**
     ```bash
@@ -68,6 +68,11 @@ This section provides a brief overview of how to get the project running. For mo
     ```
     The frontend development server will be accessible at `http://localhost:5173`.
 
+###  Ports
+
+*   **Backend API Server**: `8080`
+*   **Frontend Development Server**: `5173`
+
 ---
 
 ## 📈 Monitoring
@@ -79,6 +84,8 @@ For a comprehensive guide on setting up logging, metrics, and alerting, please s
 ## 🧪 Testing
 
 This project is equipped with a comprehensive suite of tests and quality assurance tools to ensure code reliability and maintainability.
+
+*Note: The testing suite is currently under development. The instructions below are placeholders for when the tests are fully implemented.*
 
 ### Backend (Go)
 
