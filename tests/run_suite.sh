@@ -21,36 +21,25 @@ print_fail() {
 }
 
 # --- Main Test Runner ---
-print_header "K2Ray DEPLOYMENT VALIDATION SUITE"
+print_header "DSL BYPASS ULTRA - UNIT TEST SUITE"
 
-# Get the root directory of the project
-ROOT_DIR=$(git rev-parse --show-toplevel)
-TEST_SUITE_DIR="$ROOT_DIR/tests/suite"
-
-# Run Integration Tests
-print_header "RUNNING INTEGRATION TESTS"
-if python3 "$TEST_SUITE_DIR/test_integration.py"; then
-    print_success "Integration tests passed."
+# Use python's unittest discovery to find and run all tests
+# The -s flag specifies the start directory for discovery.
+# The -p flag specifies the pattern for test files.
+if python3 -m unittest discover -s tests -p "test_*.py"; then
+    print_success "All Python unit tests passed."
 else
-    print_fail "Integration tests failed."
+    print_fail "Python unit tests failed."
 fi
 
-# Run Safety System Tests
-print_header "RUNNING SAFETY SYSTEM TESTS"
-if python3 "$TEST_SUITE_DIR/test_safety_checks.py"; then
-    print_success "Safety system tests passed."
-else
-    print_fail "Safety system tests failed."
-fi
-
-# Run Performance Validation
+# You can still run non-python tests separately if needed
+# For example, the performance shell script
 print_header "RUNNING PERFORMANCE VALIDATION"
-if bash "$TEST_SUITE_DIR/test_performance.sh"; then
+if bash "tests/suite/test_performance.sh"; then
     print_success "Performance validation passed."
 else
     print_fail "Performance validation failed."
 fi
-
 
 print_header "ALL TESTS PASSED"
 echo "✅ Deployment validation successful."

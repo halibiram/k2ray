@@ -3,7 +3,7 @@
 import os
 import json
 import time
-from .modem_interface import ModemInterface
+from .modem_interface import KeeneticAPI
 
 class SecurityManager:
     """
@@ -13,7 +13,7 @@ class SecurityManager:
     için gerekli mantıkla dolduruldu.
     """
 
-    def __init__(self, modem_interface: ModemInterface, backup_path="backups/"):
+    def __init__(self, modem_interface: KeeneticAPI, backup_path="backups/"):
         """
         Initializes the security manager.
         """

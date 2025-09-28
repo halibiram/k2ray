@@ -93,8 +93,8 @@ class KeeneticAPI:
             main_page_url = f"{self.base_url}/"
             response = self.session.get(main_page_url, timeout=5)
             response.raise_for_status()
-            # The token is often in the headers, let's check there first
-            self.csrf_token = self.session.headers.get('X-CSRF-Token')
+            # The token is often in the headers of the response, let's check there first
+            self.csrf_token = response.headers.get('X-CSRF-Token')
             if self.csrf_token:
                  self.session.headers.update({'X-CSRF-Token': self.csrf_token})
                  print(f"CSRF token obtained: {self.csrf_token}")
@@ -163,7 +163,7 @@ class KeeneticAPI:
             line = line.strip()
             if ":" in line:
                 key, value = line.split(":", 1)
-                key = key.strip().lower().replace(" ", "_").replace("(", "").replace(")", "")
+                key = key.strip().lower().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")
                 value = value.strip()
 
                 # Extract numeric values where possible
