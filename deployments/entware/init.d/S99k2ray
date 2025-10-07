@@ -1,0 +1,143 @@
+#!/bin/sh
+
+# Keenetic Entware init script for K2Ray
+# Based on Entware init script format for Keenetic routers
+
+NAME="k2ray"
+DESC="K2Ray - V2Ray Management Panel"
+DAEMON="/opt/bin/k2ray"
+CONFIG_DIR="/opt/etc/k2ray"
+PID_FILE="/opt/var/run/$NAME.pid"
+LOCK_FILE="/opt/var/lock/$NAME.lock"
+LOG_FILE="/opt/var/log/$NAME.log"
+USER="admin"
+
+# Create necessary directories
+mkdir -p /opt/var/run /opt/var/lock /opt/var/log /opt/etc/k2ray
+
+# Source function library
+. /opt/etc/init.d/rc.func
+
+start() {
+    if [ -f $LOCK_FILE ]; then
+        echo "$NAME is locked."
+        exit 1
+    fi
+
+    if [ -f $PID_FILE ] && kill -0 $(cat $PID_FILE) 2>/dev/null; then
+        echo "$NAME already running (PID: $(cat $PID_FILE))"
+        return 1
+    fi
+
+    echo "Starting $DESC: $NAME"
+    
+    # Check if daemon exists
+    if [ ! -x "$DAEMON" ]; then
+        echo "Error: $DAEMON not found or not executable"
+        return 1
+    fi
+
+    # Check if config directory exists
+    if [ ! -d "$CONFIG_DIR" ]; then
+        echo "Warning: Config directory $CONFIG_DIR not found, creating..."
+        mkdir -p "$CONFIG_DIR"
+        # Create default config if needed
+        if [ ! -f "$CONFIG_DIR/config.yaml" ]; then
+            create_default_config
+        fi
+    fi
+
+    # Start the daemon
+    start-stop-daemon -S -q -p $PID_FILE -m -b -x $DAEMON -- --config="$CONFIG_DIR" > $LOG_FILE 2>&1
+    
+    if [ $? -eq 0 ]; then
+        touch $LOCK_FILE
+        echo "Started $NAME successfully"
+        return 0
+    else
+        echo "Failed to start $NAME"
+        return 1
+    fi
+}
+
+stop() {
+    if [ ! -f $PID_FILE ]; then
+        echo "$NAME is not running"
+        return 1
+    fi
+
+    echo "Stopping $DESC: $NAME"
+    
+    start-stop-daemon -K -q -p $PID_FILE -x $DAEMON
+    
+    if [ $? -eq 0 ]; then
+        rm -f $PID_FILE $LOCK_FILE
+        echo "Stopped $NAME successfully"
+        return 0
+    else
+        echo "Failed to stop $NAME"
+        return 1
+    fi
+}
+
+status() {
+    if [ -f $PID_FILE ] && kill -0 $(cat $PID_FILE) 2>/dev/null; then
+        echo "$NAME is running (PID: $(cat $PID_FILE))"
+        return 0
+    else
+        echo "$NAME is not running"
+        return 1
+    fi
+}
+
+restart() {
+    stop
+    sleep 2
+    start
+}
+
+create_default_config() {
+    cat > "$CONFIG_DIR/config.yaml" << 'EOF'
+# K2Ray Configuration for Keenetic Router
+server:
+  host: "0.0.0.0"
+  port: 8080
+  
+database:
+  type: "sqlite"
+  path: "/opt/var/lib/k2ray/k2ray.db"
+
+logging:
+  level: "info"
+  file: "/opt/var/log/k2ray.log"
+
+v2ray:
+  config_path: "/opt/etc/v2ray"
+  executable: "/opt/bin/v2ray"
+
+security:
+  jwt_secret: "your-jwt-secret-key-change-this"
+  session_timeout: 24h
+EOF
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit $?

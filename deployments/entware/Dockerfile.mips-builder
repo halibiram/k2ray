@@ -1,0 +1,71 @@
+# Multi-stage Docker file for building K2Ray for MIPS (Keenetic routers)
+# This creates a cross-compilation environment for MIPS architectures
+
+FROM golang:1.24-alpine AS mips-builder
+
+# Install required packages
+RUN apk add --no-cache \
+    git \
+    make \
+    bash \
+    curl \
+    tar \
+    gzip
+
+# Install Node.js for frontend building
+RUN apk add --no-cache nodejs npm
+
+# Set working directory
+WORKDIR /src
+
+# Copy source code
+COPY . .
+
+# Build frontend first
+WORKDIR /src/web
+RUN npm install && npm run build || true
+
+# Build backend for MIPS architectures
+WORKDIR /src
+
+# Build for MIPS little-endian (most Keenetic models)
+RUN GOOS=linux GOARCH=mipsle CGO_ENABLED=0 go build \
+    -tags "netgo,osusergo" \
+    -ldflags "-s -w -extldflags '-static'" \
+    -o /tmp/k2ray-mipsle ./cmd/k2ray
+
+# Build for MIPS big-endian (some older models)  
+RUN GOOS=linux GOARCH=mips CGO_ENABLED=0 go build \
+    -tags "netgo,osusergo" \
+    -ldflags "-s -w -extldflags '-static'" \
+    -o /tmp/k2ray-mips ./cmd/k2ray
+
+# Create minimal runtime image
+FROM scratch AS runtime
+
+# Copy binaries
+COPY --from=mips-builder /tmp/k2ray-mipsle /k2ray-mipsle
+COPY --from=mips-builder /tmp/k2ray-mips /k2ray-mips
+
+# Copy configuration files
+COPY --from=mips-builder /src/deployments/entware /entware
+COPY --from=mips-builder /src/config.yaml /config.yaml
+
+# Create final package image
+FROM alpine:latest AS package
+
+RUN apk add --no-cache tar gzip
+
+WORKDIR /package
+
+# Copy artifacts from previous stages
+COPY --from=runtime / ./
+
+# Create installation package
+RUN mkdir -p k2ray-keenetic && \
+    cp k2ray-mipsle k2ray-keenetic/k2ray && \
+    cp -r entware k2ray-keenetic/ && \
+    cp config.yaml k2ray-keenetic/ && \
+    tar -czf k2ray-keenetic-$(date +%Y%m%d).tar.gz k2ray-keenetic/
+
+CMD ["sh", "-c", "ls -la /package/*.tar.gz"]
