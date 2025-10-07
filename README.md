@@ -40,6 +40,17 @@ This section provides a brief overview of how to get the project running. For mo
 *   **Node.js**: Version 18 or higher (with npm)
 *   **V2Ray**: A running instance of V2Ray that k2ray can manage.
 
+### 🏠 Keenetic Router Support
+
+K2Ray now supports **Keenetic Extra DSL KN2112** and other Keenetic routers with Entware:
+
+*   **Native MIPS Support**: Cross-compiled for MIPS architecture
+*   **Entware Integration**: Optimized for Entware package system
+*   **Resource Optimization**: Configured for router hardware constraints
+*   **DSL Monitoring**: Built-in support for Keenetic DSL modems
+
+For Keenetic installation, see [Keenetic Deployment Guide](./README_KEENETIC.md)
+
 ### ⚙️ Installation
 
 1.  **Clone the repository:**

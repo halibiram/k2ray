@@ -1,0 +1,125 @@
+# K2Ray Configuration for Keenetic Extra DSL KN2112
+# This configuration is optimized for Keenetic routers with Entware
+
+# Server Configuration
+server:
+  host: "0.0.0.0"              # Listen on all interfaces
+  port: 8080                   # Default web interface port
+  read_timeout: "30s"
+  write_timeout: "30s"
+  idle_timeout: "60s"
+  
+# Database Configuration
+database:
+  type: "sqlite"               # Use SQLite for embedded deployment
+  path: "/opt/var/lib/k2ray/k2ray.db"
+  max_connections: 5           # Limited connections for resource-constrained environment
+  connection_lifetime: "1h"
+
+# Logging Configuration
+logging:
+  level: "info"                # Options: debug, info, warn, error
+  file: "/opt/var/log/k2ray.log"
+  max_size: "10MB"             # Rotate log file when it exceeds this size
+  max_backups: 3               # Keep maximum 3 backup files
+  max_age: 7                   # Keep logs for 7 days
+  compress: true               # Compress old log files
+
+# V2Ray Configuration
+v2ray:
+  config_path: "/opt/etc/v2ray"    # V2Ray configuration directory
+  executable: "/opt/bin/v2ray"     # Path to V2Ray binary
+  api_port: 8081                   # V2Ray API port
+  stats_port: 8082                 # V2Ray statistics port
+
+# Security Configuration
+security:
+  jwt_secret: "CHANGE_THIS_SECRET_KEY_FOR_PRODUCTION"  # Change this in production!
+  session_timeout: "24h"
+  enable_2fa: false               # Two-factor authentication (optional)
+  cors_allowed_origins:
+    - "http://192.168.1.1:8080"   # Adjust according to your router IP
+    - "http://localhost:8080"
+  rate_limit:
+    requests_per_minute: 60       # API rate limiting
+    burst: 10
+
+# Keenetic DSL Modem Configuration
+modem:
+  host: "192.168.1.1"             # Modem web interface IP
+  username: "admin"               # Default Keenetic username
+  password: "YOUR_PASSWORD_HERE"   # CHANGE THIS - Your Keenetic admin password
+  timeout: "10s"                  # Connection timeout
+  
+# DSL Monitoring Configuration
+monitoring:
+  enabled: true
+  interval: 10                    # Check interval in seconds
+  metrics:
+    snr: true                     # Signal-to-noise ratio
+    attenuation: true             # Line attenuation
+    speed: true                   # Connection speed
+    errors: true                  # Error counters
+    
+# DSL Optimization Configuration  
+optimization:
+  enabled: false                  # Disable by default for safety
+  profile: "balanced"             # Options: max_speed, max_stability, balanced
+  target_snr: 50.0               # Target SNR value (dB)
+  adjustment_step: 0.5            # SNR adjustment step size
+  max_adjustments: 10             # Maximum adjustments per session
+  
+# Web Interface Configuration
+web:
+  static_path: "/opt/share/k2ray/web"  # Path to web interface files
+  enable_gzip: true                    # Enable gzip compression
+  cache_duration: "1h"                 # Static file cache duration
+
+# Performance Configuration (optimized for router hardware)
+performance:
+  worker_pool_size: 2              # Number of worker goroutines (limited for router)
+  max_concurrent_requests: 50      # Maximum concurrent HTTP requests
+  memory_limit: "64MB"             # Memory usage limit
+  cpu_limit: 0.5                   # CPU usage limit (50% of one core)
+  
+# Backup Configuration
+backup:
+  enabled: true
+  path: "/opt/var/backups/k2ray"
+  interval: "24h"                  # Daily backups
+  retention: "7d"                  # Keep backups for 7 days
+  
+# API Configuration
+api:
+  enable_swagger: false            # Disable Swagger UI in production
+  enable_metrics: true             # Enable Prometheus metrics
+  metrics_path: "/metrics"
+  
+# Feature Flags (enable/disable features for performance)
+features:
+  enable_websocket: true           # Real-time updates
+  enable_qr_codes: true           # QR code generation
+  enable_statistics: true          # Traffic statistics
+  enable_notifications: false      # Disable notifications to save resources
+  
+# System Integration
+system:
+  pid_file: "/opt/var/run/k2ray.pid"
+  working_directory: "/opt/var/lib/k2ray"
+  user: "admin"                    # Run as admin user
+  
+# Network Configuration
+network:
+  interfaces:
+    - "eth0"                       # Monitor these network interfaces
+    - "ppp0"
+    - "wlan0"
+  dns_servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+    
+# Development/Debug (disable in production)
+debug:
+  enabled: false
+  pprof: false                     # Disable profiling endpoints
+  debug_port: 0                    # Disable debug port
