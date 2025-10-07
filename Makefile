@@ -1,3 +1,4 @@
+export GOPROXY := direct
 .PHONY: test test-coverage
 
 # Standard test runner
@@ -13,10 +14,12 @@ test-coverage:
 # Linter that outputs to a file for SonarQube
 lint-report:
 	@echo "Running golangci-lint and creating report..."
-	@if ! command -v golangci-lint &> /dev/null; then \
+	@GOPATH=$(shell go env GOPATH); \
+	export PATH="$$GOPATH/bin:$$PATH"; \
+	if ! command -v golangci-lint &> /dev/null; then \
 		echo "golangci-lint not found, installing..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1; \
-	fi
+	fi; \
 	golangci-lint run --out-format json --issues-exit-code 0 ./... > golangci-report.json
 
 # Add other build/run targets as needed
@@ -86,5 +89,10 @@ package-keenetic:
 
 swag:
 	@echo ">> Generating Swagger/OpenAPI documentation..."
-	@go install github.com/swaggo/swag/cmd/swag@latest
-	@$(go env GOPATH)/bin/swag init -g cmd/k2ray/main.go
+	@GOPATH=$(shell go env GOPATH); \
+	export PATH="$$GOPATH/bin:$$PATH"; \
+	if ! command -v swag &> /dev/null; then \
+		echo "swag not found, installing..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+	fi; \
+	swag init -g cmd/k2ray/main.go
