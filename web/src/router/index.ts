@@ -17,11 +17,21 @@ const routes = [
     component: () => import('../components/common/Layout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'Dashboard', component: () => import('../views/Dashboard.vue') },
+      { path: '', name: 'Dashboard', component: () => import('../views/V2RayDashboard.vue') },
+      {
+        path: '/v2ray-servers',
+        name: 'V2RayServers',
+        component: () => import('../views/V2RayDashboard.vue'),
+      },
       {
         path: '/configurations',
         name: 'Configurations',
         component: () => import('../views/ConfigManager.vue'),
+      },
+      {
+        path: '/connections',
+        name: 'Connections',
+        component: () => import('../views/Connections.vue'),
       },
       {
         path: '/system-status',
@@ -29,7 +39,23 @@ const routes = [
         component: () => import('../views/SystemStatus.vue'),
       },
       { path: '/monitoring', name: 'Monitoring', component: () => import('../views/Monitoring.vue') },
+      { 
+        path: '/security', 
+        name: 'Security', 
+        component: () => import('../views/Security.vue') 
+      },
+      { 
+        path: '/logs', 
+        name: 'Logs', 
+        component: () => import('../views/Logs.vue') 
+      },
+      { path: '/settings', name: 'Settings', component: () => import('../views/Settings.vue') },
       { path: '/settings/2fa', name: 'Setup2FA', component: () => import('../views/Setup2FA.vue') },
+      { 
+        path: '/profile', 
+        name: 'Profile', 
+        component: () => import('../views/Profile.vue') 
+      },
     ],
   },
   // Catch-all to redirect to the main page
